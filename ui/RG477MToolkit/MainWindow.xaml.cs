@@ -1,5 +1,7 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using RG477MToolkit.Models;
 using RG477MToolkit.Services;
@@ -14,14 +16,21 @@ public partial class MainWindow : FluentWindow
     private readonly ScriptRunnerService _runner;
     private readonly DriverService _driverService;
     private readonly DispatcherTimer _pollTimer;
+    private readonly string? _screenshotDir;
+    private bool _captureStarted;
     private bool _isBusy;
     private bool _isPolling;
     private bool _isEnglish;
     private DeviceStateSnapshot _latestState = new();
     private DriverStatus _driverStatus = new();
 
-    public MainWindow()
+    public MainWindow() : this(null)
     {
+    }
+
+    public MainWindow(string? screenshotDir)
+    {
+        _screenshotDir = string.IsNullOrWhiteSpace(screenshotDir) ? null : screenshotDir;
         InitializeComponent();
 
         _paths = new ToolkitPaths();
@@ -38,9 +47,21 @@ public partial class MainWindow : FluentWindow
         _pollTimer.Tick += async (_, _) => await RefreshDeviceStateAsync();
         Loaded += async (_, _) =>
         {
+            if (_screenshotDir is not null)
+            {
+                Width = 1080;
+                Height = 835;
+                return;
+            }
             await CheckDriversStatusAsync();
             await RefreshDeviceStateAsync();
             _pollTimer.Start();
+        };
+        ContentRendered += async (_, _) =>
+        {
+            if (_screenshotDir is null || _captureStarted) return;
+            _captureStarted = true;
+            await CaptureAllScreenshotsAsync(_screenshotDir);
         };
         Closed += (_, _) => _pollTimer.Stop();
     }
@@ -168,7 +189,7 @@ public partial class MainWindow : FluentWindow
 
     private void ApplyState(DeviceStateSnapshot state)
     {
-        DeviceCanvas.UpdateState(state);
+        DeviceCanvas.UpdateState(state, _isEnglish);
         ModeDetailText.Text = state.ModeDetail;
         FirmwareText.Text = state.Firmware;
         SlotText.Text = state.ActiveSlot;
@@ -255,6 +276,7 @@ public partial class MainWindow : FluentWindow
         _isEnglish = !_isEnglish;
         ApplyLanguage();
         UpdateDriverUi();
+        ApplyState(_latestState);
     }
 
     private async void BtnInstallDrivers_Click(object sender, RoutedEventArgs e)
@@ -370,4 +392,128 @@ public partial class MainWindow : FluentWindow
 
     private void BtnClearLog_Click(object sender, RoutedEventArgs e)
         => LogTextBox.Clear();
+
+    private async Task CaptureAllScreenshotsAsync(string outputDir)
+    {
+        Directory.CreateDirectory(outputDir);
+        LogExpander.IsExpanded = false;
+        await Task.Delay(250);
+
+        foreach (bool isEn in new[] { false, true })
+        {
+            string lang = isEn ? "en" : "ru";
+            _isEnglish = isEn;
+            ApplyLanguage();
+
+            var scenarios = new (string Slug, DriverStatus Drivers, DeviceStateSnapshot State)[]
+            {
+                (
+                    "disconnected",
+                    new DriverStatus { HasMtkVcom = false, HasAdbUsb = false },
+                    new DeviceStateSnapshot
+                    {
+                        Mode = ConnectionMode.Disconnected,
+                        ModeTitle = isEn ? "Disconnected" : "Устройство не подключено",
+                        ModeDetail = isEn ? "Connect RG477M via USB-C (ADB or Preloader/BROM)" : "Подключите RG477M по USB-C (ADB или Preloader/BROM)",
+                        Model = "—",
+                        Firmware = "—",
+                        ActiveSlot = "—",
+                        MagiskStatus = isEn ? "Not checked" : "Не проверено",
+                        BackupSummary = isEn ? "Not found" : "Бэкап не найден"
+                    }
+                ),
+                (
+                    "adb-online",
+                    new DriverStatus { HasMtkVcom = true, HasAdbUsb = true },
+                    new DeviceStateSnapshot
+                    {
+                        Mode = ConnectionMode.AdbOnline,
+                        ModeTitle = isEn ? "ADB Online" : "Подключено (ADB)",
+                        ModeDetail = isEn ? "RG477M • Stock V1.32 • Ready" : "RG477M • Сток V1.32 • Готово к работе",
+                        Model = "RG477M",
+                        Firmware = "V1.32 (V654202605282152)",
+                        ActiveSlot = "_b",
+                        MagiskStatus = "v31.1 (root)",
+                        IsSupportedBuild = true,
+                        HasStockBackup = true,
+                        BackupSummary = "7/7 SHA-256 OK"
+                    }
+                ),
+                (
+                    "preloader",
+                    new DriverStatus { HasMtkVcom = true, HasAdbUsb = true },
+                    new DeviceStateSnapshot
+                    {
+                        Mode = ConnectionMode.PreloaderVcom,
+                        ModeTitle = "PreLoader VCOM (COM5)",
+                        ModeDetail = isEn ? "SP Flash Tool V6 ready • Do not unplug USB" : "Готов к SP Flash Tool V6 • Не отключайте кабель",
+                        Model = "RG477M",
+                        Firmware = "V1.32",
+                        ActiveSlot = "_b",
+                        MagiskStatus = "—",
+                        ComPort = "COM5",
+                        HasStockBackup = true,
+                        BackupSummary = "7/7 SHA-256 OK"
+                    }
+                ),
+                (
+                    "error-code43",
+                    new DriverStatus { HasMtkVcom = false, HasAdbUsb = true },
+                    new DeviceStateSnapshot
+                    {
+                        Mode = ConnectionMode.UsbDescriptorError,
+                        ModeTitle = isEn ? "USB Code 43" : "Ошибка USB (Код 43)",
+                        ModeDetail = isEn
+                            ? "Device descriptor request failed — hold ONLY Vol+ and Vol- (do NOT press Power)"
+                            : "Сбой дескриптора USB — зажмите ТОЛЬКО Vol+ и Vol- (НЕ нажимайте Power)",
+                        Model = "—",
+                        Firmware = "—",
+                        ActiveSlot = "—",
+                        MagiskStatus = "—",
+                        HasStockBackup = true,
+                        BackupSummary = "7/7 SHA-256 OK"
+                    }
+                )
+            };
+
+            foreach (var (slug, drivers, state) in scenarios)
+            {
+                _driverStatus = drivers;
+                _latestState = state;
+                UpdateDriverUi();
+                ApplyState(state);
+                UpdateLayout();
+                await Task.Delay(150);
+
+                if (Content is FrameworkElement root)
+                {
+                    SaveElementPng(root, Path.Combine(outputDir, $"ui-{slug}-{lang}.png"));
+                }
+            }
+        }
+
+        Application.Current.Shutdown(0);
+    }
+
+    private static void SaveElementPng(FrameworkElement root, string path)
+    {
+        root.UpdateLayout();
+        int width = Math.Max(1, (int)Math.Ceiling(root.ActualWidth));
+        int height = Math.Max(1, (int)Math.Ceiling(root.ActualHeight));
+
+        var dv = new DrawingVisual();
+        using (DrawingContext dc = dv.RenderOpen())
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x18, 0x18, 0x1B)), null, new Rect(0, 0, width, height));
+            dc.DrawRectangle(new VisualBrush(root), null, new Rect(0, 0, width, height));
+        }
+
+        var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        rtb.Render(dv);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(rtb));
+        using FileStream fs = File.Create(path);
+        encoder.Save(fs);
+    }
 }

@@ -15,6 +15,18 @@ Rooting a locked-bootloader MediaTek handheld normally requires hunting down dri
 - **Quiet, smooth fan:** Replaces erratic stock `bal` and `turbo` fan curves ("fan hunting") with ~10s EMA-smoothed temperature tracking and gentle speed ramps (silent when cool or screen-off; `silent`/`fixed` modes stay untouched).
 - **Cleaner frame pacing & full safety:** Fixes stock `debug.sf.disable_backpressure=1` (eliminating ~1s display flickers), keeps `thermal_core` active at all times, backs off above `85 °C`, and auto-disables on 2 failed boots.
 
+### Screenshots
+<table>
+  <tr>
+    <td align="center"><a href="Guides/images/ui-adb-online-en.png" target="_blank"><img src="Guides/images/ui-adb-online-en.png" width="420" alt="ADB Online &amp; Drivers OK"></a><br><sub><b>ADB Online &amp; Drivers OK</b></sub></td>
+    <td align="center"><a href="Guides/images/ui-disconnected-en.png" target="_blank"><img src="Guides/images/ui-disconnected-en.png" width="420" alt="Disconnected + Missing Drivers Alert"></a><br><sub><b>Disconnected + Driver Prompt</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="Guides/images/ui-preloader-en.png" target="_blank"><img src="Guides/images/ui-preloader-en.png" width="420" alt="PreLoader VCOM Mode"></a><br><sub><b>PreLoader VCOM (Auto-Catch)</b></sub></td>
+    <td align="center"><a href="Guides/images/ui-error-code43-en.png" target="_blank"><img src="Guides/images/ui-error-code43-en.png" width="420" alt="USB Code 43 Recovery Hint"></a><br><sub><b>USB Code 43 Recovery Hint</b></sub></td>
+  </tr>
+</table>
+
 ### Quick Start (3 Steps)
 1. Download and extract **`RG477MToolkit.zip`** from **Releases**, then run **`launch-ui.bat`** (or `RG477MToolkit.exe`). If prompted, click **Install Drivers**.
 2. Enable **USB Debugging** on RG477M, plug in USB-C, and run **Step 1 (Readback Backup)** → **Step 2 (Build Patch & Flash Magisk)**.
@@ -44,6 +56,18 @@ Credits & upstream licences: [THANKS.md](THANKS.md) · Licensed under [MIT](LICE
 - **Меньше нагрева в режиме `Game`:** заменяет стоковый лок CPU `performance` на быстрый `schedutil` + `uclamp`.
 - **Тихий и плавный вентилятор:** убирает «шторм» и плавающие обороты в режимах `bal` и `turbo` за счёт ~10-секундного сглаживания температуры и плавного шага PWM (тишина в простое и со спящим экраном; режимы `silent` и `fixed` остаются за шторкой).
 - **Плавность кадров и защита:** исправляет стоковый флаг `debug.sf.disable_backpressure=1` (убирает ~1-сек. мерцания), оставляет штатную термозащиту `thermal_core` включённой, приглушает буст выше `85 °C` и сам отключается при 2 неудачных загрузках.
+
+### Скриншоты приложения
+<table>
+  <tr>
+    <td align="center"><a href="Guides/images/ui-adb-online-ru.png" target="_blank"><img src="Guides/images/ui-adb-online-ru.png" width="420" alt="Подключено по ADB и драйверы OK"></a><br><sub><b>Подключено (ADB) и драйверы OK</b></sub></td>
+    <td align="center"><a href="Guides/images/ui-disconnected-ru.png" target="_blank"><img src="Guides/images/ui-disconnected-ru.png" width="420" alt="Не подключено и запрос драйверов"></a><br><sub><b>Ожидание и баннер драйверов</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="Guides/images/ui-preloader-ru.png" target="_blank"><img src="Guides/images/ui-preloader-ru.png" width="420" alt="Режим PreLoader VCOM"></a><br><sub><b>PreLoader VCOM (автоподхват)</b></sub></td>
+    <td align="center"><a href="Guides/images/ui-error-code43-ru.png" target="_blank"><img src="Guides/images/ui-error-code43-ru.png" width="420" alt="Ошибка USB Код 43"></a><br><sub><b>Подсказка при ошибке USB Код 43</b></sub></td>
+  </tr>
+</table>
 
 ### Быстрый старт (3 шага)
 1. Скачайте и распакуйте **`RG477MToolkit.zip`** из раздела **Releases**, запустите **`launch-ui.bat`** (или `RG477MToolkit.exe`). Если появится жёлтый баннер — нажмите **Установить драйверы**.
