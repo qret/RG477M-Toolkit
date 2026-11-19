@@ -1,0 +1,13 @@
+{
+  "_note": "Device guard before any flashing operation. No per-device serials or fingerprints.",
+  "match": {
+    "ro.product.model": "RG477M",
+    "ro.product.device": "k6897v1_64",
+    "ro.board.platform": "mt6897"
+  },
+  "supported_builds": [
+    "V1.32"
+  ],
+  "recommended_firmware": "Stock V1.32 (latest official)",
+  "policy": "mismatch => STOP; readback allowed with model+platform match"
+}

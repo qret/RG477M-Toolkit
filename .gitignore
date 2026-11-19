@@ -1,0 +1,22 @@
+# Runtime / per-device / build artifacts (never commit)
+backups/
+build/
+logs/
+local.paths.json
+*.img
+*.bin
+*.apk
+*.zip
+*.7z
+
+# IDE / .NET / OS
+.vs/
+.vscode/
+**/bin/
+**/obj/
+__pycache__/
+*.pyc
+*.user
+*.suo
+Thumbs.db
+desktop.ini

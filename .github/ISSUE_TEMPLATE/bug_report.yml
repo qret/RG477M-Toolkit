@@ -1,0 +1,53 @@
+name: Bug Report
+description: Report a problem with RG477MToolkit or the performance module
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: toolkit_version
+    attributes:
+      label: RG477MToolkit Version
+      placeholder: "e.g. 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: device_variant
+    attributes:
+      label: Device Variant / Storage
+      options:
+        - RG477M 256GB
+        - RG477M 128GB
+    validations:
+      required: true
+  - type: input
+    id: firmware_build
+    attributes:
+      label: Stock Firmware Version
+      value: "V1.32"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection_mode
+    attributes:
+      label: Connection Mode
+      options:
+        - ADB Online
+        - Auto Preloader (VCOM)
+        - Manual BROM
+        - USB Error 43
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Steps & Description
+      description: What did you click/run and what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console / SP Flash Tool Logs
+      description: Paste output from the UI Console expander or SP Flash Tool log (remove personal paths if any).
+      render: text

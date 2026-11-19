@@ -1,0 +1,6 @@
+id=rg477m_perf_tuning
+name=RG477M Performance & Frame Pacing Fix (MT6897)
+version=v0.1.0
+versionCode=100
+author=RG477M Toolkit
+description=Fixes Mali-G615 GPU frequency drop & 1s BLASTBufferQueue flicker in Stock Balance/Game modes on Anbernic RG477M (Stock V1.32) with LVTS thermal guard.

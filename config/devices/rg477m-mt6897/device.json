@@ -1,0 +1,47 @@
+{
+  "code": "rg477m-mt6897",
+  "name": "Anbernic RG477M",
+  "soc": "MediaTek MT6897 (Dimensity 8300)",
+  "gpu": "Mali-G615 MC6",
+  "android_api": 34,
+  "ab_partitions": true,
+  "storage": "UFS",
+  "ramdisk_partition": "init_boot",
+  "partitions": {
+    "preloader_a": { "region": "UFS-LUA0", "start": "0x0", "length": "0x100000" },
+    "preloader_b": { "region": "UFS-LUA1", "start": "0x0", "length": "0x100000" },
+    "vbmeta_a": { "region": "UFS-LUA2", "partition": "vbmeta_a", "length": "0x800000" },
+    "vbmeta_b": { "region": "UFS-LUA2", "partition": "vbmeta_b", "length": "0x800000" },
+    "boot_a": { "region": "UFS-LUA2", "partition": "boot_a", "length": "0x4000000" },
+    "boot_b": { "region": "UFS-LUA2", "partition": "boot_b", "length": "0x4000000" },
+    "init_boot_a": { "region": "UFS-LUA2", "partition": "init_boot_a", "length": "0x800000" },
+    "init_boot_b": { "region": "UFS-LUA2", "partition": "init_boot_b", "length": "0x800000" },
+    "vendor_boot_a": { "region": "UFS-LUA2", "partition": "vendor_boot_a", "length": "0x4000000" },
+    "vendor_boot_b": { "region": "UFS-LUA2", "partition": "vendor_boot_b", "length": "0x4000000" },
+    "seccfg": { "region": "UFS-LUA2", "partition": "seccfg", "length": "0x800000" }
+  },
+  "usb_vcom": {
+    "vid": "0E8D",
+    "pids": {
+      "brom": "0003",
+      "preloader": "2000",
+      "da": "2001"
+    },
+    "brom_combo": "Power off completely -> hold Vol+ and Vol- together (NO Power!) -> plug USB-C"
+  },
+  "sysfs": {
+    "mali_devfreq": "/sys/devices/platform/soc/13000000.mali/devfreq/13000000.mali",
+    "gpufreqv2": "/proc/gpufreqv2",
+    "ged_hal": "/sys/kernel/ged/hal",
+    "fpsgo": "/sys/kernel/fpsgo",
+    "thermal": "/sys/kernel/thermal",
+    "dvfsrc_devfreq": "/sys/devices/platform/soc/1c00f000.dvfsrc/mtk-dvfsrc-devfreq/devfreq/mtk-dvfsrc-devfreq",
+    "cpufreq_policies": ["policy0", "policy4", "policy7"]
+  },
+  "magisk": {
+    "recommended_release": "v31.1",
+    "github_repo": "topjohnwu/Magisk",
+    "keep_verity": true,
+    "keep_force_encrypt": true
+  }
+}
