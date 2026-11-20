@@ -110,7 +110,7 @@
                                        Text="• Авто-Preloader (рекомендуется): при запуске прошивки по ADB консоль сама перезагрузится и подхватится SP Flash Tool без зажатия кнопок."
                                        FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,0,0,6"/>
                             <TextBlock x:Name="GuideBromText"
-                                       Text="• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol+ и Vol- (НЕ нажимайте Power!) и вставьте USB-C."
+                                       Text="• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol- и Vol+ (НЕ нажимайте Power!) и вставьте USB-C."
                                        FontSize="12" Foreground="#FBBF24" TextWrapping="Wrap"/>
                         </StackPanel>
                     </ui:Card>

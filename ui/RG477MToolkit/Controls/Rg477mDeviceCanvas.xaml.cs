@@ -14,24 +14,31 @@ public partial class Rg477mDeviceCanvas : UserControl
     public void UpdateState(DeviceStateSnapshot state, bool isEnglish = false)
     {
         var neutral = new SolidColorBrush(Color.FromRgb(0x3F, 0x45, 0x52));
+        var neutralTick = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
         var neutralText = new SolidColorBrush(Color.FromRgb(0x71, 0x71, 0x7A));
 
-        VolUpButton.Background = neutral;
+        StatusLed.Background = neutral;
         VolDownButton.Background = neutral;
+        VolUpButton.Background = neutral;
+        VolDownTick.Background = neutralTick;
+        VolUpTick.Background = neutralTick;
         VolHintLabel.Foreground = neutralText;
         PowerButton.Background = neutral;
-        PowerHintLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
+        PowerTick.Background = neutralTick;
+        PowerHintLabel.Foreground = neutralTick;
         PowerHintLabel.Text = "Power";
 
         switch (state.Mode)
         {
             case ConnectionMode.AdbOnline:
                 var green = Color.FromRgb(0x22, 0xC5, 0x5E);
+                var greenBrush = new SolidColorBrush(green);
                 ChassisGlowEffect.Color = green;
                 ChassisGlowEffect.Opacity = 0.75;
-                BodyShell.BorderBrush = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E));
-                UsbPort.Background = new SolidColorBrush(green);
-                UsbLabel.Foreground = new SolidColorBrush(green);
+                BodyShell.BorderBrush = greenBrush;
+                StatusLed.Background = greenBrush;
+                UsbPort.Background = greenBrush;
+                UsbLabel.Foreground = greenBrush;
                 ScreenDisplay.Background = new SolidColorBrush(Color.FromRgb(0x0B, 0x1A, 0x12));
                 ScreenTitle.Text = state.Model;
                 ScreenSubtitle.Text = $"ADB Online • {state.Firmware}";
@@ -45,14 +52,18 @@ public partial class Rg477mDeviceCanvas : UserControl
             case ConnectionMode.PreloaderVcom:
             case ConnectionMode.BromMode:
                 var amber = Color.FromRgb(0xF5, 0x9E, 0x0B);
+                var amberLedBrush = new SolidColorBrush(amber);
                 ChassisGlowEffect.Color = amber;
                 ChassisGlowEffect.Opacity = 0.8;
-                BodyShell.BorderBrush = new SolidColorBrush(amber);
-                UsbPort.Background = new SolidColorBrush(amber);
-                UsbLabel.Foreground = new SolidColorBrush(amber);
-                VolUpButton.Background = new SolidColorBrush(amber);
-                VolDownButton.Background = new SolidColorBrush(amber);
-                VolHintLabel.Foreground = new SolidColorBrush(amber);
+                BodyShell.BorderBrush = amberLedBrush;
+                StatusLed.Background = amberLedBrush;
+                UsbPort.Background = amberLedBrush;
+                UsbLabel.Foreground = amberLedBrush;
+                VolDownButton.Background = amberLedBrush;
+                VolUpButton.Background = amberLedBrush;
+                VolDownTick.Background = amberLedBrush;
+                VolUpTick.Background = amberLedBrush;
+                VolHintLabel.Foreground = amberLedBrush;
                 ScreenDisplay.Background = new SolidColorBrush(Color.FromRgb(0x1C, 0x14, 0x08));
                 ScreenTitle.Text = state.Mode == ConnectionMode.BromMode ? "BROM ACTIVE" : "PRELOADER";
                 ScreenSubtitle.Text = string.IsNullOrEmpty(state.ComPort)
@@ -65,25 +76,31 @@ public partial class Rg477mDeviceCanvas : UserControl
 
             case ConnectionMode.UsbDescriptorError:
                 var red = Color.FromRgb(0xEF, 0x44, 0x44);
+                var redBrush = new SolidColorBrush(red);
                 var amberBrush = new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B));
                 ChassisGlowEffect.Color = red;
                 ChassisGlowEffect.Opacity = 0.8;
-                BodyShell.BorderBrush = new SolidColorBrush(red);
-                UsbPort.Background = new SolidColorBrush(red);
-                UsbLabel.Foreground = new SolidColorBrush(red);
-                VolUpButton.Background = amberBrush;
+                BodyShell.BorderBrush = redBrush;
+                StatusLed.Background = redBrush;
+                UsbPort.Background = redBrush;
+                UsbLabel.Foreground = redBrush;
                 VolDownButton.Background = amberBrush;
+                VolUpButton.Background = amberBrush;
+                VolDownTick.Background = amberBrush;
+                VolUpTick.Background = amberBrush;
                 VolHintLabel.Foreground = amberBrush;
-                PowerButton.Background = new SolidColorBrush(red);
-                PowerHintLabel.Foreground = new SolidColorBrush(red);
+                PowerButton.Background = redBrush;
+                PowerTick.Background = redBrush;
+                PowerHintLabel.Foreground = redBrush;
                 PowerHintLabel.Text = isEnglish ? "Do NOT press Power!" : "НЕ жать Power!";
                 ScreenDisplay.Background = new SolidColorBrush(Color.FromRgb(0x1F, 0x0D, 0x0E));
                 ScreenTitle.Text = isEnglish ? "USB Code 43" : "USB Код 43";
-                ScreenSubtitle.Text = isEnglish ? "Hold ONLY Vol+ and Vol-" : "Зажмите ТОЛЬКО Vol+ и Vol-";
+                ScreenSubtitle.Text = isEnglish ? "Hold ONLY Vol- and Vol+" : "Зажмите ТОЛЬКО Vol- и Vol+";
                 ScreenSubtitle.Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71));
                 ScreenMeta.Text = isEnglish
                     ? "Unplug USB and retry without Power"
                     : "Отключите USB и повторите без Power";
+                ScreenMeta.Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA1, 0xAA));
                 break;
 
             default:
@@ -96,7 +113,7 @@ public partial class Rg477mDeviceCanvas : UserControl
                 ScreenTitle.Text = "RG477M";
                 ScreenSubtitle.Text = isEnglish ? "Waiting for device..." : "Ожидание подключения...";
                 ScreenSubtitle.Foreground = neutralText;
-                ScreenMeta.Text = isEnglish ? "ADB or hold Vol+ / Vol- for BROM" : "ADB или Vol+ / Vol- для BROM";
+                ScreenMeta.Text = isEnglish ? "ADB or hold Vol- / Vol+ for BROM" : "ADB или Vol- / Vol+ для BROM";
                 ScreenMeta.Foreground = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
                 break;
         }

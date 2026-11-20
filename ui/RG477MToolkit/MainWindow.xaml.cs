@@ -107,7 +107,7 @@ public partial class MainWindow : FluentWindow
             GuideTitleText.Text = "Connection Guide (MT6897)";
             GuideAdbText.Text = "• Normal mode (ADB): enable USB debugging on the handheld and plug in USB-C.";
             GuidePreloaderText.Text = "• Auto-Preloader (recommended): during flashing over ADB, the device auto-reboots and SP Flash Tool catches Preloader without button holds.";
-            GuideBromText.Text = "• Manual BROM (unbrick): power off completely, hold Vol+ and Vol- (do NOT press Power!) and plug in USB-C.";
+            GuideBromText.Text = "• Manual BROM (unbrick): power off completely, hold Vol- and Vol+ (do NOT press Power!) and plug in USB-C.";
             WizardTitleText.Text = "Root & Performance Setup Wizard";
             ToolkitSubtitleText.Text = $"Anbernic RG477M • Stock V1.32 • Magisk {_paths.TargetMagiskVersion} • Toolkit v{_paths.ToolkitVersion}";
             Step1TitleText.Text = "1. Stock Readback Backup";
@@ -144,7 +144,7 @@ public partial class MainWindow : FluentWindow
             GuideTitleText.Text = "Памятка подключения (MT6897)";
             GuideAdbText.Text = "• Обычный режим (ADB): включите отладку по USB на консоли и подключите кабель.";
             GuidePreloaderText.Text = "• Авто-Preloader (рекомендуется): при запуске прошивки по ADB консоль сама перезагрузится и подхватится SP Flash Tool без зажатия кнопок.";
-            GuideBromText.Text = "• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol+ и Vol- (НЕ нажимайте Power!) и вставьте USB-C.";
+            GuideBromText.Text = "• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol- и Vol+ (НЕ нажимайте Power!) и вставьте USB-C.";
             WizardTitleText.Text = "Мастер установки и оптимизации";
             ToolkitSubtitleText.Text = $"Anbernic RG477M • Stock V1.32 • Magisk {_paths.TargetMagiskVersion} • Toolkit v{_paths.ToolkitVersion}";
             Step1TitleText.Text = "1. Readback-бэкап стоковых разделов";
@@ -464,8 +464,8 @@ public partial class MainWindow : FluentWindow
                         Mode = ConnectionMode.UsbDescriptorError,
                         ModeTitle = isEn ? "USB Code 43" : "Ошибка USB (Код 43)",
                         ModeDetail = isEn
-                            ? "Device descriptor request failed — hold ONLY Vol+ and Vol- (do NOT press Power)"
-                            : "Сбой дескриптора USB — зажмите ТОЛЬКО Vol+ и Vol- (НЕ нажимайте Power)",
+                            ? "Device descriptor request failed — hold ONLY Vol- and Vol+ (do NOT press Power)"
+                            : "Сбой дескриптора USB — зажмите ТОЛЬКО Vol- и Vol+ (НЕ нажимайте Power)",
                         Model = "—",
                         Firmware = "—",
                         ActiveSlot = "—",

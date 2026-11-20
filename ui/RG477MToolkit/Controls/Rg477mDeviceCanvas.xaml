@@ -5,14 +5,14 @@
              Width="420">
     <Grid>
         <Viewbox Stretch="Uniform">
-            <Canvas Width="420" Height="230">
+            <Canvas Width="420" Height="236">
                 <!-- Подсветка / свечение под корпусом -->
                 <Border x:Name="ChassisGlowBorder"
-                        Canvas.Left="24"
-                        Canvas.Top="24"
-                        Width="372"
-                        Height="178"
-                        CornerRadius="28"
+                        Canvas.Left="22"
+                        Canvas.Top="30"
+                        Width="376"
+                        Height="176"
+                        CornerRadius="34"
                         Background="#121418">
                     <Border.Effect>
                         <DropShadowEffect x:Name="ChassisGlowEffect"
@@ -23,43 +23,72 @@
                     </Border.Effect>
                 </Border>
 
-                <!-- Шифты L1 / L2 и R1 / R2 -->
-                <Border Canvas.Left="46" Canvas.Top="17" Width="54" Height="10" CornerRadius="4" Background="#2E323B"/>
-                <Border Canvas.Left="320" Canvas.Top="17" Width="54" Height="10" CornerRadius="4" Background="#2E323B"/>
+                <!-- Шифты L1 / L2 (верхний торец слева) -->
+                <Border Canvas.Left="34" Canvas.Top="23" Width="24" Height="9" CornerRadius="4,3,0,0" Background="#2E323B"/>
+                <Border Canvas.Left="60" Canvas.Top="23" Width="26" Height="9" CornerRadius="3,4,0,0" Background="#2E323B"/>
 
-                <!-- Кнопки громкости Vol+ / Vol- (верхний торец слева) -->
-                <Border x:Name="VolUpButton" Canvas.Left="114" Canvas.Top="18" Width="28" Height="7" CornerRadius="3" Background="#3F4552"/>
-                <Border x:Name="VolDownButton" Canvas.Left="146" Canvas.Top="18" Width="28" Height="7" CornerRadius="3" Background="#3F4552"/>
-                <TextBlock x:Name="VolHintLabel"
-                           Canvas.Left="104"
+                <!-- Кнопка Power (верхний торец слева, правее L2) -->
+                <Border x:Name="PowerButton" Canvas.Left="108" Canvas.Top="24" Width="18" Height="7" CornerRadius="3,3,0,0" Background="#3F4552"/>
+                <Border x:Name="PowerTick" Canvas.Left="116" Canvas.Top="17" Width="2" Height="6" Background="#52525B"/>
+                <TextBlock x:Name="PowerHintLabel"
+                           Canvas.Left="4"
                            Canvas.Top="2"
-                           Text="Vol+ / Vol-"
+                           Width="118"
+                           TextAlignment="Right"
+                           Text="Power"
+                           Foreground="#52525B"
+                           FontSize="10"
+                           FontWeight="SemiBold"/>
+
+                <!-- Качелька громкости Vol- / Vol+ (сразу справа от Power: - слева, + справа) -->
+                <Border x:Name="VolDownButton" Canvas.Left="133" Canvas.Top="24" Width="21" Height="7" CornerRadius="3,1,0,0" Background="#3F4552"/>
+                <Border x:Name="VolUpButton" Canvas.Left="157" Canvas.Top="24" Width="21" Height="7" CornerRadius="1,3,0,0" Background="#3F4552"/>
+                <Border x:Name="VolDownTick" Canvas.Left="143" Canvas.Top="17" Width="2" Height="6" Background="#52525B"/>
+                <Border x:Name="VolUpTick" Canvas.Left="167" Canvas.Top="17" Width="2" Height="6" Background="#52525B"/>
+                <TextBlock x:Name="VolHintLabel"
+                           Canvas.Left="132"
+                           Canvas.Top="2"
+                           Width="96"
+                           TextAlignment="Left"
+                           Text="Vol- / Vol+"
                            Foreground="#71717A"
                            FontSize="10"
                            FontWeight="SemiBold"/>
 
-                <!-- Кнопка Power (верхний торец справа) -->
-                <Border x:Name="PowerButton" Canvas.Left="280" Canvas.Top="18" Width="24" Height="7" CornerRadius="3" Background="#3F4552"/>
-                <TextBlock x:Name="PowerHintLabel"
-                           Canvas.Left="276"
-                           Canvas.Top="2"
-                           Text="Power"
-                           Foreground="#52525B"
-                           FontSize="10"/>
+                <!-- LED-индикатор статуса -->
+                <Border x:Name="StatusLed" Canvas.Left="190" Canvas.Top="25" Width="6" Height="5" CornerRadius="2.5" Background="#3F4552"/>
+
+                <!-- Вентиляционная решётка кулера (10 прорезей) -->
+                <StackPanel Orientation="Horizontal" Canvas.Left="230" Canvas.Top="25">
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,2.5,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                    <Border Width="3.5" Height="5" Margin="0,0,0,0" CornerRadius="1.5" Background="#0F1115" BorderBrush="#343844" BorderThickness="0.5"/>
+                </StackPanel>
+
+                <!-- Шифты R2 / R1 (верхний торец справа) -->
+                <Border Canvas.Left="334" Canvas.Top="23" Width="26" Height="9" CornerRadius="4,3,0,0" Background="#2E323B"/>
+                <Border Canvas.Left="362" Canvas.Top="23" Width="24" Height="9" CornerRadius="3,4,0,0" Background="#2E323B"/>
 
                 <!-- Основной металлический корпус RG477M -->
                 <Border x:Name="BodyShell"
-                        Canvas.Left="24"
-                        Canvas.Top="24"
-                        Width="372"
-                        Height="178"
-                        CornerRadius="26"
+                        Canvas.Left="22"
+                        Canvas.Top="30"
+                        Width="376"
+                        Height="176"
+                        CornerRadius="34"
                         BorderThickness="2"
                         BorderBrush="#3A3F4B">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#272A32" Offset="0"/>
-                            <GradientStop Color="#1C1E24" Offset="0.5"/>
+                            <GradientStop Color="#2D2F36" Offset="0"/>
+                            <GradientStop Color="#1E2026" Offset="0.5"/>
                             <GradientStop Color="#15171C" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
@@ -68,16 +97,16 @@
                 <!-- Экран 4:3 по центру -->
                 <Border x:Name="ScreenBezel"
                         Canvas.Left="104"
-                        Canvas.Top="36"
+                        Canvas.Top="37"
                         Width="212"
-                        Height="154"
-                        CornerRadius="10"
+                        Height="162"
+                        CornerRadius="8"
                         Background="#0A0B0E"
                         BorderThickness="1.5"
                         BorderBrush="#323741">
                     <Grid Margin="6">
                         <Border x:Name="ScreenDisplay"
-                                CornerRadius="6"
+                                CornerRadius="5"
                                 Background="#0D1117">
                             <StackPanel VerticalAlignment="Center" Margin="8">
                                 <TextBlock x:Name="ScreenTitle"
@@ -106,43 +135,90 @@
                     </Grid>
                 </Border>
 
-                <!-- Левая часть: D-Pad -->
-                <Grid Canvas.Left="46" Canvas.Top="56" Width="38" Height="38">
-                    <Border Width="12" Height="38" CornerRadius="3" Background="#2F333D" BorderBrush="#454B59" BorderThickness="1"/>
-                    <Border Width="38" Height="12" CornerRadius="3" Background="#2F333D" BorderBrush="#454B59" BorderThickness="1"/>
+                <!-- Микрофон -->
+                <Ellipse Canvas.Left="90" Canvas.Top="44" Width="3" Height="3" Fill="#0A0B0E"/>
+
+                <!-- Левая панель: D-Pad -->
+                <Grid Canvas.Left="43" Canvas.Top="54" Width="40" Height="40">
+                    <Border Width="13" Height="40" CornerRadius="3" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1"/>
+                    <Border Width="40" Height="13" CornerRadius="3" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1"/>
+                    <Border Width="11" Height="11" Background="#1D2026"/>
+                    <Ellipse Width="8" Height="8" Fill="#15171C"/>
                 </Grid>
 
-                <!-- Левый стик -->
-                <Ellipse Canvas.Left="48" Canvas.Top="120" Width="34" Height="34" Fill="#1E2128" Stroke="#454B59" StrokeThickness="1.5"/>
-                <Ellipse Canvas.Left="54" Canvas.Top="126" Width="22" Height="22" Fill="#2D313B"/>
+                <!-- Левый стик с RGB-кольцом -->
+                <Ellipse Canvas.Left="45" Canvas.Top="115" Width="36" Height="36" Fill="#14161B" StrokeThickness="2" Opacity="0.7">
+                    <Ellipse.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#EC4899" Offset="0.0"/>
+                            <GradientStop Color="#8B5CF6" Offset="0.25"/>
+                            <GradientStop Color="#3B82F6" Offset="0.5"/>
+                            <GradientStop Color="#22C55E" Offset="0.75"/>
+                            <GradientStop Color="#F59E0B" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Stroke>
+                </Ellipse>
+                <Ellipse Canvas.Left="50" Canvas.Top="120" Width="26" Height="26" Fill="#1F232B" Stroke="#3D4350" StrokeThickness="1"/>
+                <Ellipse Canvas.Left="54" Canvas.Top="124" Width="18" Height="18" Fill="#2B303A"/>
 
-                <!-- Правая часть: ABXY -->
-                <Grid Canvas.Left="334" Canvas.Top="54" Width="44" Height="44">
-                    <Ellipse Canvas.Left="15" Canvas.Top="0" Width="13" Height="13" Fill="#2F333D" Stroke="#4B5563" StrokeThickness="1"/>
-                    <Ellipse Canvas.Left="15" Canvas.Top="30" Width="13" Height="13" Fill="#2F333D" Stroke="#4B5563" StrokeThickness="1"/>
-                    <Ellipse Canvas.Left="0" Canvas.Top="15" Width="13" Height="13" Fill="#2F333D" Stroke="#4B5563" StrokeThickness="1"/>
-                    <Ellipse Canvas.Left="30" Canvas.Top="15" Width="13" Height="13" Fill="#2F333D" Stroke="#4B5563" StrokeThickness="1"/>
-                </Grid>
+                <!-- Две круглые функциональные кнопки слева снизу (Back / Home) -->
+                <Border Canvas.Left="45" Canvas.Top="170" Width="15" Height="15" CornerRadius="7.5" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1"/>
+                <Border Canvas.Left="66" Canvas.Top="170" Width="15" Height="15" CornerRadius="7.5" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1"/>
 
-                <!-- Правый стик -->
-                <Ellipse Canvas.Left="338" Canvas.Top="120" Width="34" Height="34" Fill="#1E2128" Stroke="#454B59" StrokeThickness="1.5"/>
-                <Ellipse Canvas.Left="344" Canvas.Top="126" Width="22" Height="22" Fill="#2D313B"/>
+                <!-- Правая панель: кнопки ABXY -->
+                <Canvas Canvas.Left="334" Canvas.Top="51" Width="46" Height="46">
+                    <Border Canvas.Left="16" Canvas.Top="0" Width="14" Height="14" CornerRadius="7" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1">
+                        <TextBlock Text="X" Foreground="#60A5FA" FontSize="8.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Canvas.Left="0" Canvas.Top="16" Width="14" Height="14" CornerRadius="7" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1">
+                        <TextBlock Text="Y" Foreground="#4ADE80" FontSize="8.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Canvas.Left="32" Canvas.Top="16" Width="14" Height="14" CornerRadius="7" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1">
+                        <TextBlock Text="A" Foreground="#F87171" FontSize="8.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Canvas.Left="16" Canvas.Top="32" Width="14" Height="14" CornerRadius="7" Background="#1D2026" BorderBrush="#3E4451" BorderThickness="1">
+                        <TextBlock Text="B" Foreground="#FACC15" FontSize="8.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Canvas>
 
-                <!-- Служебные кнопки (Select/Start/Function) -->
-                <Ellipse Canvas.Left="88" Canvas.Top="162" Width="8" Height="8" Fill="#2D313B"/>
-                <Ellipse Canvas.Left="324" Canvas.Top="162" Width="8" Height="8" Fill="#2D313B"/>
+                <!-- Правый стик с RGB-кольцом -->
+                <Ellipse Canvas.Left="339" Canvas.Top="115" Width="36" Height="36" Fill="#14161B" StrokeThickness="2" Opacity="0.7">
+                    <Ellipse.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#EC4899" Offset="0.0"/>
+                            <GradientStop Color="#8B5CF6" Offset="0.25"/>
+                            <GradientStop Color="#3B82F6" Offset="0.5"/>
+                            <GradientStop Color="#22C55E" Offset="0.75"/>
+                            <GradientStop Color="#F59E0B" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Stroke>
+                </Ellipse>
+                <Ellipse Canvas.Left="344" Canvas.Top="120" Width="26" Height="26" Fill="#1F232B" Stroke="#3D4350" StrokeThickness="1"/>
+                <Ellipse Canvas.Left="348" Canvas.Top="124" Width="18" Height="18" Fill="#2B303A"/>
+
+                <!-- Капсула SE / ST справа снизу -->
+                <Border Canvas.Left="336" Canvas.Top="171" Width="42" Height="14" CornerRadius="7" Background="#14161B" BorderBrush="#363B46" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Width="17" Height="10" CornerRadius="5" Background="#252932" Margin="0,0,2,0">
+                            <TextBlock Text="SE" FontSize="6.5" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="17" Height="10" CornerRadius="5" Background="#252932">
+                            <TextBlock Text="ST" FontSize="6.5" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
 
                 <!-- Нижний порт USB-C -->
                 <Border x:Name="UsbPort"
                         Canvas.Left="195"
-                        Canvas.Top="200"
+                        Canvas.Top="205"
                         Width="30"
                         Height="6"
-                        CornerRadius="3"
+                        CornerRadius="0,0,3,3"
                         Background="#3F4552"/>
                 <TextBlock x:Name="UsbLabel"
                            Canvas.Left="189"
-                           Canvas.Top="209"
+                           Canvas.Top="214"
                            Text="USB-C"
                            Foreground="#71717A"
                            FontSize="10"/>
