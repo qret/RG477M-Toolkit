@@ -135,12 +135,21 @@ public sealed class ToolkitPaths
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(localPathsFile));
             var root = doc.RootElement;
-            if (root.TryGetProperty("adb", out var adbEl) && !string.IsNullOrWhiteSpace(adbEl.GetString()))
-                AdbExe = adbEl.GetString()!;
+            if (root.TryGetProperty("adb", out var adbEl))
+            {
+                var val = adbEl.GetString();
+                if (!string.IsNullOrWhiteSpace(val) && File.Exists(val)) AdbExe = val;
+            }
             if (root.TryGetProperty("spft_dir", out var spftEl))
-                SpftDir = spftEl.GetString();
+            {
+                var val = spftEl.GetString();
+                if (!string.IsNullOrWhiteSpace(val) && Directory.Exists(val)) SpftDir = val;
+            }
             if (root.TryGetProperty("magisk_apk", out var magiskEl))
-                MagiskApk = magiskEl.GetString();
+            {
+                var val = magiskEl.GetString();
+                if (!string.IsNullOrWhiteSpace(val) && File.Exists(val)) MagiskApk = val;
+            }
         }
         catch
         {
@@ -148,28 +157,40 @@ public sealed class ToolkitPaths
         }
     }
 
-    public (bool hasBackup, string summary) CheckStockBackup()
+    public (bool hasBackup, string summary) CheckStockBackup(bool isEnglish = false)
     {
         if (!Directory.Exists(BackupsStockDir))
-            return (false, "Папка backups/stock отсутствует");
+            return (false, isEnglish ? "Folder backups/stock missing" : "Папка backups/stock отсутствует");
 
         string[] required =
         [
             "boot_a.img", "boot_b.img",
             "init_boot_a.img", "init_boot_b.img",
             "vbmeta_a.img", "vbmeta_b.img",
-            "preloader_a.bin", "preloader_b.bin"
+            "preloader_a.bin", "preloader_b.bin",
+            "seccfg.img"
         ];
 
-        var present = required.Count(f => File.Exists(Path.Combine(BackupsStockDir, f)));
-        var withSha = required.Count(f => File.Exists(Path.Combine(BackupsStockDir, f + ".sha256")));
+        int present = 0;
+        int withSha = 0;
+        foreach (var f in required)
+        {
+            var full = Path.Combine(BackupsStockDir, f);
+            if (File.Exists(full) && new FileInfo(full).Length > 0)
+            {
+                present++;
+                var sha = full + ".sha256";
+                if (File.Exists(sha) && new FileInfo(sha).Length > 0)
+                    withSha++;
+            }
+        }
 
-        if (present == required.Length)
-            return (true, $"Готов ({present}/{required.Length} разделов, SHA-256: {withSha})");
+        if (present == required.Length && withSha == required.Length)
+            return (true, isEnglish ? $"Ready ({present}/{required.Length} partitions, SHA-256 OK)" : $"Готов ({present}/{required.Length} разделов, SHA-256 OK)");
 
         if (present > 0)
-            return (false, $"Неполный ({present}/{required.Length} разделов)");
+            return (false, isEnglish ? $"Incomplete ({present}/{required.Length} partitions, SHA-256: {withSha})" : $"Неполный ({present}/{required.Length} разделов, SHA-256: {withSha})");
 
-        return (false, "Сделайте Readback до прошивки");
+        return (false, isEnglish ? "Run backup before flashing" : "Сделайте бэкап до прошивки");
     }
 }

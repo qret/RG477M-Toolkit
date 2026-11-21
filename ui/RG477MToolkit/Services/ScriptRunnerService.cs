@@ -17,6 +17,7 @@ public sealed class ScriptRunnerService
         string scriptPath,
         string arguments,
         Action<string> onOutput,
+        bool isEnglish = false,
         CancellationToken ct = default)
     {
         var psi = new ProcessStartInfo
@@ -42,7 +43,7 @@ public sealed class ScriptRunnerService
         proc.BeginErrorReadLine();
 
         await proc.WaitForExitAsync(ct);
-        onOutput($"[Завершено с кодом: {proc.ExitCode}]");
+        onOutput(isEnglish ? $"[Finished with code: {proc.ExitCode}]" : $"[Завершено с кодом: {proc.ExitCode}]");
         return proc.ExitCode;
     }
 }

@@ -1,5 +1,7 @@
 ﻿# _common.ps1 - Shared portable helpers for RG477M Toolkit
 
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
 $script:ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $script:LocalPathsFile = Join-Path $script:ProjectRoot 'local.paths.json'
 $script:LocalCfg = $null

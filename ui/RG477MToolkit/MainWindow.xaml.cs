@@ -176,7 +176,7 @@ public partial class MainWindow : FluentWindow
         _isPolling = true;
         try
         {
-            _latestState = await _monitor.PollOnceAsync();
+            _latestState = await _monitor.PollOnceAsync(_isEnglish);
             ApplyState(_latestState);
         }
         finally
@@ -319,7 +319,7 @@ public partial class MainWindow : FluentWindow
         {
             foreach (var (scriptPath, args) in steps)
             {
-                var exitCode = await _runner.RunPowerShellAsync(scriptPath, args, AppendLog);
+                var exitCode = await _runner.RunPowerShellAsync(scriptPath, args, AppendLog, _isEnglish);
                 if (exitCode != 0)
                 {
                     AppendLog("[ERR] " + (_isEnglish
@@ -365,11 +365,20 @@ public partial class MainWindow : FluentWindow
         ApplyLanguage();
         UpdateDriverUi();
         ApplyState(_latestState);
+        _ = RefreshDeviceStateAsync();
     }
 
     private async void BtnInstallDrivers_Click(object sender, RoutedEventArgs e)
     {
+        if (_isBusy)
+        {
+            AppendLog("[INFO] " + (_isEnglish ? "Wait for the current operation to finish." : "Дождитесь завершения текущей операции."));
+            return;
+        }
+
+        _isBusy = true;
         BtnInstallDrivers.IsEnabled = false;
+        SetActionButtonsEnabled(false);
         LogExpander.IsExpanded = true;
         try
         {
@@ -379,7 +388,9 @@ public partial class MainWindow : FluentWindow
         }
         finally
         {
+            _isBusy = false;
             BtnInstallDrivers.IsEnabled = true;
+            SetActionButtonsEnabled(true);
         }
     }
 
@@ -477,6 +488,18 @@ public partial class MainWindow : FluentWindow
 
     private async void BtnRestoreStock_Click(object sender, RoutedEventArgs e)
     {
+        if (!_latestState.HasStockBackup)
+        {
+            System.Windows.MessageBox.Show(
+                _isEnglish
+                    ? "Verified stock backup was not found in backups/stock/. Cannot restore stock without factory images."
+                    : "Проверенный бэкап стоковых разделов в папке backups/stock/ не найден. Откат невозможен без заводских образов.",
+                _isEnglish ? "Backup Not Found" : "Бэкап не найден",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         var confirm = System.Windows.MessageBox.Show(
             _isEnglish
                 ? "Restore original stock vbmeta and init_boot from backups/stock/?"
@@ -491,8 +514,15 @@ public partial class MainWindow : FluentWindow
 
     private void BtnCopyLog_Click(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(LogTextBox.Text))
+        if (string.IsNullOrEmpty(LogTextBox.Text)) return;
+        try
+        {
             Clipboard.SetText(LogTextBox.Text);
+        }
+        catch (Exception ex)
+        {
+            AppendLog("[WARN] " + (_isEnglish ? $"Clipboard busy: {ex.Message}" : $"Буфер обмена занят: {ex.Message}"));
+        }
     }
 
     private void BtnClearLog_Click(object sender, RoutedEventArgs e)
@@ -544,10 +574,10 @@ public partial class MainWindow : FluentWindow
                         MagiskStatus = "v31.1 (root)",
                         IsMagiskInstalled = true,
                         ModuleState = PerfModuleState.InstalledUpToDate,
-                        InstalledModuleVersion = "v0.1.0",
+                        InstalledModuleVersion = "v0.1.1",
                         IsSupportedBuild = true,
                         HasStockBackup = true,
-                        BackupSummary = "8/8 SHA-256 OK"
+                        BackupSummary = "9/9 SHA-256 OK"
                     }
                 ),
                 (
@@ -566,7 +596,7 @@ public partial class MainWindow : FluentWindow
                         ModuleState = PerfModuleState.NotInstalled,
                         ComPort = "COM5",
                         HasStockBackup = true,
-                        BackupSummary = "8/8 SHA-256 OK"
+                        BackupSummary = "9/9 SHA-256 OK"
                     }
                 ),
                 (
@@ -586,7 +616,7 @@ public partial class MainWindow : FluentWindow
                         IsMagiskInstalled = false,
                         ModuleState = PerfModuleState.NotInstalled,
                         HasStockBackup = true,
-                        BackupSummary = "8/8 SHA-256 OK"
+                        BackupSummary = "9/9 SHA-256 OK"
                     }
                 )
             };

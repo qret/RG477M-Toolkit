@@ -34,7 +34,7 @@ get_max_soc_temp() {
         case "$val" in
             ''|*[!0-9]*) continue ;;
         esac
-        if [ "$val" -gt 0 ] && [ "$val" -lt 200 ]; then
+        if [ "$val" -ge 15 ] && [ "$val" -lt 200 ]; then
             val=$((val * 1000))
         fi
         if [ "$val" -ge 1000 ] && [ "$val" -le 125000 ] && [ "$val" -gt "$max_t" ]; then
@@ -106,6 +106,7 @@ apply_profile() {
             ;;
         mode_0)
             w "$FIX_OPP" -1
+            w "${GPU_DEV}/max_freq" 1400000000
             w "${GED_HAL}/custom_boost_gpu_freq" 64
             w "${GED_HAL}/dvfs_margin_value" 530
             w "${GED_HAL}/loading_base_dvfs_step" 4
@@ -115,6 +116,8 @@ apply_profile() {
             ;;
         mode_3)
             w "$CPUIDLE_GOV" "teo"
+            w "${GPU_DEV}/max_freq" 1400000000
+            w "/sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq" 400000
             w "${GED_HAL}/custom_boost_gpu_freq" 64
             w "${GED_HAL}/dvfs_margin_value" 130
             w "$UCLAMP_TOP" 60
@@ -179,6 +182,7 @@ heavy_tick=0
 cached_fan_mode="1"
 
 cleanup() {
+    trap - INT TERM EXIT
     [ -e "$AMP_NODE" ] && echo "0.1" > "$AMP_NODE" 2>/dev/null || true
     if [ "${fan_owned:-0}" -eq 1 ] && [ -e "$FAN_NODE" ]; then
         chmod 666 "$FAN_NODE" 2>/dev/null || true
@@ -308,8 +312,10 @@ while true; do
                 tgt_pwm=$(calc_target_fan_pwm "$ema_temp" "$bright" "$cached_fan_mode")
                 diff=$((tgt_pwm - cur_pwm))
                 if [ "$tgt_pwm" -eq 0 ] && [ "$cur_pwm" -le 65 ]; then
-                    cur_pwm=0
-                    echo 0 > "$FAN_NODE" 2>/dev/null || true
+                    if [ "$cur_pwm" -ne 0 ]; then
+                        cur_pwm=0
+                        echo 0 > "$FAN_NODE" 2>/dev/null || true
+                    fi
                 elif [ "$diff" -ge 8 ]; then
                     step=$diff
                     [ "$step" -gt 10 ] && step=10

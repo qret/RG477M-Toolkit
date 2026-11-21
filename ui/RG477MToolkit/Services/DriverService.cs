@@ -29,12 +29,29 @@ public sealed class DriverService
             using var proc = Process.Start(psi);
             if (proc is null) return new DriverStatus();
 
-            var stdout = await proc.StandardOutput.ReadToEndAsync(ct);
-            await proc.WaitForExitAsync(ct);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(5000));
+
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync(timeoutCts.Token);
+            var stderrTask = proc.StandardError.ReadToEndAsync(timeoutCts.Token);
+            try
+            {
+                await proc.WaitForExitAsync(timeoutCts.Token);
+            }
+            catch
+            {
+                try { if (!proc.HasExited) proc.Kill(entireProcessTree: true); } catch { }
+                return new DriverStatus();
+            }
+
+            var stdout = await stdoutTask;
+            _ = await stderrTask;
 
             var hasMtk = stdout.Contains("cdc-acm.inf", StringComparison.OrdinalIgnoreCase) ||
+                         stdout.Contains("usb2ser", StringComparison.OrdinalIgnoreCase) ||
                          (stdout.Contains("MediaTek", StringComparison.OrdinalIgnoreCase) &&
-                          stdout.Contains("Ports", StringComparison.OrdinalIgnoreCase));
+                          (stdout.Contains("Ports", StringComparison.OrdinalIgnoreCase) ||
+                           stdout.Contains("Порты", StringComparison.OrdinalIgnoreCase)));
 
             var hasAdb = stdout.Contains("android_winusb.inf", StringComparison.OrdinalIgnoreCase);
 

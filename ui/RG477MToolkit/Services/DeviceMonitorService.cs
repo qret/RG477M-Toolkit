@@ -14,20 +14,21 @@ public sealed class DeviceMonitorService
         _paths = paths;
     }
 
-    public async Task<DeviceStateSnapshot> PollOnceAsync(CancellationToken ct = default)
+    public async Task<DeviceStateSnapshot> PollOnceAsync(bool isEnglish = false, CancellationToken ct = default)
     {
-        var (hasBackup, backupSummary) = _paths.CheckStockBackup();
+        var (hasBackup, backupSummary) = _paths.CheckStockBackup(isEnglish);
 
-        // 1. Сначала проверяем MediaTek Preloader / BROM по PnP USB
-        var usbState = DetectMediaTekUsb();
-        if (usbState.mode != ConnectionMode.Disconnected)
+        // 1. Сначала проверяем MediaTek Preloader / BROM по PnP USB (в фоновом потоке)
+        var (usbMode, usbTitle, usbDetail, usbPort, usbIsDefiniteMtk) = await Task.Run(() => DetectMediaTekUsb(isEnglish), ct);
+        if (usbMode != ConnectionMode.Disconnected && (usbMode != ConnectionMode.UsbDescriptorError || usbIsDefiniteMtk))
         {
             return new DeviceStateSnapshot
             {
-                Mode = usbState.mode,
-                ModeTitle = usbState.title,
-                ModeDetail = usbState.detail,
-                ComPort = usbState.port,
+                Mode = usbMode,
+                ModeTitle = usbTitle,
+                ModeDetail = usbDetail,
+                ComPort = usbPort,
+                MagiskStatus = "—",
                 HasStockBackup = hasBackup,
                 BackupSummary = backupSummary
             };
@@ -50,7 +51,7 @@ public sealed class DeviceMonitorService
 
             var magiskText = isMagiskInstalled
                 ? magiskVer
-                : "Не установлен (сток)";
+                : (isEnglish ? "Not installed (stock)" : "Не установлен (сток)");
 
             var (moduleState, installedModuleVer) = isMagiskInstalled
                 ? await CheckPerfModuleStateAsync(ct)
@@ -59,10 +60,10 @@ public sealed class DeviceMonitorService
             return new DeviceStateSnapshot
             {
                 Mode = ConnectionMode.AdbOnline,
-                ModeTitle = "ADB Online",
+                ModeTitle = isEnglish ? "ADB Online" : "Подключено (ADB)",
                 ModeDetail = isSupported
-                    ? "RG477M на поддерживаемой прошивке V1.32 — готов к работе"
-                    : $"Обнаружено устройство: {model} ({build})",
+                    ? (isEnglish ? "RG477M on supported Stock V1.32 — ready" : "RG477M на поддерживаемой прошивке V1.32 — готов к работе")
+                    : (isEnglish ? $"Detected device: {model} ({build})" : $"Обнаружено устройство: {model} ({build})"),
                 Model = string.IsNullOrWhiteSpace(model) ? "RG477M" : model,
                 Firmware = string.IsNullOrWhiteSpace(build) ? "—" : build,
                 ActiveSlot = string.IsNullOrWhiteSpace(slot) ? "—" : slot,
@@ -76,11 +77,29 @@ public sealed class DeviceMonitorService
             };
         }
 
+        // Если ADB не в сети и ранее поймали VID_0000&PID_0002 (сбой дескриптора USB) — показываем подсказку по Кнопкам 43
+        if (usbMode == ConnectionMode.UsbDescriptorError)
+        {
+            return new DeviceStateSnapshot
+            {
+                Mode = usbMode,
+                ModeTitle = usbTitle,
+                ModeDetail = usbDetail,
+                ComPort = usbPort,
+                MagiskStatus = "—",
+                HasStockBackup = hasBackup,
+                BackupSummary = backupSummary
+            };
+        }
+
         return new DeviceStateSnapshot
         {
             Mode = ConnectionMode.Disconnected,
-            ModeTitle = "Устройство не подключено",
-            ModeDetail = "Подключите включённый RG477M по USB-C (ADB) или переведите в BROM",
+            ModeTitle = isEnglish ? "Disconnected" : "Устройство не подключено",
+            ModeDetail = isEnglish
+                ? "Connect powered-on RG477M via USB-C (ADB) or boot into BROM"
+                : "Подключите включённый RG477M по USB-C (ADB) или переведите в BROM",
+            MagiskStatus = isEnglish ? "Not checked" : "Не проверено",
             HasStockBackup = hasBackup,
             BackupSummary = backupSummary
         };
@@ -89,7 +108,7 @@ public sealed class DeviceMonitorService
     private async Task<(PerfModuleState state, string version)> CheckPerfModuleStateAsync(CancellationToken ct)
     {
         var res = await RunAdbAsync(
-            "shell \"su -c 'if [ -f /data/adb/modules/rg477m_perf_tuning/remove ]; then echo REMOVE; elif [ -f /data/adb/modules/rg477m_perf_tuning/module.prop ]; then cat /data/adb/modules/rg477m_perf_tuning/module.prop; else echo NONE; fi' 2>/dev/null || echo NO_ROOT\"",
+            "shell \"su -c 'if [ -d /data/adb/modules_update/rg477m_perf_tuning ] && [ -f /data/adb/modules_update/rg477m_perf_tuning/module.prop ]; then cat /data/adb/modules_update/rg477m_perf_tuning/module.prop; elif [ -f /data/adb/modules/rg477m_perf_tuning/remove ]; then echo REMOVE; elif [ -f /data/adb/modules/rg477m_perf_tuning/disable ]; then echo DISABLED; elif [ -f /data/adb/modules/rg477m_perf_tuning/module.prop ]; then cat /data/adb/modules/rg477m_perf_tuning/module.prop; else echo NONE; fi' 2>/dev/null || echo NO_ROOT\"",
             ct);
 
         if (res.exitCode != 0)
@@ -102,7 +121,8 @@ public sealed class DeviceMonitorService
         if (outText.Equals("REMOVE", StringComparison.OrdinalIgnoreCase))
             return (PerfModuleState.PendingRemoval, "");
 
-        if (outText.Equals("NONE", StringComparison.OrdinalIgnoreCase))
+        if (outText.Equals("NONE", StringComparison.OrdinalIgnoreCase) ||
+            outText.Equals("DISABLED", StringComparison.OrdinalIgnoreCase))
             return (PerfModuleState.NotInstalled, "");
 
         if (outText.Contains("id=rg477m_perf_tuning", StringComparison.OrdinalIgnoreCase))
@@ -141,51 +161,68 @@ public sealed class DeviceMonitorService
         return false;
     }
 
-    private static (ConnectionMode mode, string title, string detail, string port) DetectMediaTekUsb()
+    private static (ConnectionMode mode, string title, string detail, string port, bool isDefiniteMtk) DetectMediaTekUsb(bool isEnglish)
     {
         try
         {
             using var searcher = new ManagementObjectSearcher(
                 "SELECT Name, DeviceID, ConfigManagerErrorCode FROM Win32_PnPEntity WHERE DeviceID LIKE '%VID_0E8D%' OR ConfigManagerErrorCode = 43");
 
-            foreach (var obj in searcher.Get())
+            using var results = searcher.Get();
+            foreach (ManagementObject obj in results)
             {
-                var devId = obj["DeviceID"]?.ToString() ?? "";
-                var name = obj["Name"]?.ToString() ?? "";
-                var errCode = Convert.ToInt32(obj["ConfigManagerErrorCode"] ?? 0);
-
-                var portMatch = Regex.Match(name, @"\((COM\d+)\)");
-                var port = portMatch.Success ? portMatch.Groups[1].Value : "";
-
-                if (devId.Contains("PID_0003", StringComparison.OrdinalIgnoreCase))
+                using (obj)
                 {
-                    return (
-                        ConnectionMode.BromMode,
-                        $"MediaTek BROM ({port})",
-                        "Режим BootROM активен — готов для Readback / прошивки SP Flash Tool",
-                        port
-                    );
-                }
+                    var devId = obj["DeviceID"]?.ToString() ?? "";
+                    var name = obj["Name"]?.ToString() ?? "";
+                    var errCode = Convert.ToInt32(obj["ConfigManagerErrorCode"] ?? 0);
 
-                if (devId.Contains("PID_2000", StringComparison.OrdinalIgnoreCase) ||
-                    name.Contains("PreLoader", StringComparison.OrdinalIgnoreCase))
-                {
-                    return (
-                        ConnectionMode.PreloaderVcom,
-                        $"MediaTek Preloader ({port})",
-                        "Порт Preloader VCOM обнаружен — SP Flash Tool сможет перехватить устройство",
-                        port
-                    );
-                }
+                    var portMatch = Regex.Match(name, @"\((COM\d+)\)");
+                    var port = portMatch.Success ? portMatch.Groups[1].Value : "";
+                    var portSuffix = string.IsNullOrEmpty(port) ? "" : $" ({port})";
 
-                if (errCode == 43 && name.Contains("USB", StringComparison.OrdinalIgnoreCase))
-                {
-                    return (
-                        ConnectionMode.UsbDescriptorError,
-                        "Ошибка USB (Код 43)",
-                        "Не удерживайте Power! Отключите кабель, зажмите только Vol+ и Vol-, затем подключите USB-C",
-                        ""
-                    );
+                    if (devId.Contains("PID_0003", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return (
+                            ConnectionMode.BromMode,
+                            $"MediaTek BROM{portSuffix}",
+                            isEnglish
+                                ? "BootROM active — ready for SP Flash Tool Readback / flashing"
+                                : "Режим BootROM активен — готов для Readback / прошивки SP Flash Tool",
+                            port,
+                            true
+                        );
+                    }
+
+                    if (devId.Contains("PID_2000", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains("PreLoader", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return (
+                            ConnectionMode.PreloaderVcom,
+                            $"MediaTek Preloader{portSuffix}",
+                            isEnglish
+                                ? "Preloader VCOM port detected — SP Flash Tool will catch the device"
+                                : "Порт Preloader VCOM обнаружен — SP Flash Tool сможет перехватить устройство",
+                            port,
+                            true
+                        );
+                    }
+
+                    if (errCode == 43 &&
+                        (devId.Contains("VID_0E8D", StringComparison.OrdinalIgnoreCase) ||
+                         devId.Contains("VID_0000&PID_0002", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        bool definite = devId.Contains("VID_0E8D", StringComparison.OrdinalIgnoreCase);
+                        return (
+                            ConnectionMode.UsbDescriptorError,
+                            isEnglish ? "USB Error (Code 43)" : "Ошибка USB (Код 43)",
+                            isEnglish
+                                ? "Do NOT hold Power! Unplug USB, hold ONLY Vol- and Vol+, then plug in USB-C"
+                                : "Не удерживайте Power! Отключите кабель, зажмите только Vol- и Vol+, затем подключите USB-C",
+                            "",
+                            definite
+                        );
+                    }
                 }
             }
         }
@@ -194,11 +231,12 @@ public sealed class DeviceMonitorService
             // WMI может быть временно недоступен; возвращаем Disconnected
         }
 
-        return (ConnectionMode.Disconnected, "", "", "");
+        return (ConnectionMode.Disconnected, "", "", "", false);
     }
 
     private async Task<(int exitCode, string stdout)> RunAdbAsync(string arguments, CancellationToken ct)
     {
+        Process? proc = null;
         try
         {
             var psi = new ProcessStartInfo
@@ -211,19 +249,36 @@ public sealed class DeviceMonitorService
                 CreateNoWindow = true
             };
 
-            using var proc = Process.Start(psi);
+            proc = Process.Start(psi);
             if (proc is null) return (-1, "");
 
-            var stdoutTask = proc.StandardOutput.ReadToEndAsync(ct);
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(1800));
+
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync(timeoutCts.Token);
+            var stderrTask = proc.StandardError.ReadToEndAsync(timeoutCts.Token);
             await proc.WaitForExitAsync(timeoutCts.Token);
+
             var stdout = await stdoutTask;
+            _ = await stderrTask;
             return (proc.ExitCode, stdout);
         }
         catch
         {
+            try
+            {
+                if (proc is not null && !proc.HasExited)
+                    proc.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+                // Игнорируем ошибку при аварийном завершении зависшего процесса
+            }
             return (-1, "");
+        }
+        finally
+        {
+            proc?.Dispose();
         }
     }
 }

@@ -24,9 +24,28 @@ if (-not (Test-Path -LiteralPath $stockImg)) {
 }
 $shaFile = "$stockImg.sha256"
 if (Test-Path -LiteralPath $shaFile) {
-    $want = (Get-Content -LiteralPath $shaFile).Trim().ToLower()
+    $want = (Get-Content -LiteralPath $shaFile -Raw).Trim().ToLower()
     $have = (Get-FileHash -LiteralPath $stockImg -Algorithm SHA256).Hash.ToLower()
     if ($want -ne $have) { throw "SHA-256 mismatch on $stockImg!" }
+}
+
+function Invoke-AdbChecked {
+    param([string[]]$AdbArgs)
+    $out = Invoke-Adb -AdbExe $adb -AdbArgs $AdbArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "ADB command failed (exit $LASTEXITCODE): adb $($AdbArgs -join ' ')`n$out"
+    }
+    return $out
+}
+
+$pmOut = Invoke-Adb -AdbExe $adb -AdbArgs @('shell', 'pm path com.topjohnwu.magisk')
+if ($LASTEXITCODE -ne 0 -or $pmOut -notmatch 'package:') {
+    Write-Host '[INFO] Installing Magisk app APK on RG477M...' -ForegroundColor Cyan
+    $instApkOut = Invoke-Adb -AdbExe $adb -AdbArgs @('install', '-r', $MagiskApk)
+    if ($LASTEXITCODE -ne 0 -or $instApkOut -notmatch 'Success') {
+        throw "adb install Magisk APK failed: $instApkOut"
+    }
+    Write-Host "[ OK ] $instApkOut" -ForegroundColor Green
 }
 
 $buildDir = Join-Path $script:ProjectRoot 'build'
@@ -84,11 +103,11 @@ $shPath = Join-Path $buildDir 'rg477m_setup.sh'
 [System.IO.File]::WriteAllText($shPath, $shContent, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "[INFO] Pushing Magisk tools & stock init_boot$Slot to /data/local/tmp/mgpatch..." -ForegroundColor Cyan
-Invoke-Adb -AdbExe $adb -AdbArgs @('shell', 'rm -rf /data/local/tmp/mgpatch && mkdir -p /data/local/tmp/mgpatch') | Out-Null
+Invoke-AdbChecked @('shell', 'rm -rf /data/local/tmp/mgpatch && mkdir -p /data/local/tmp/mgpatch') | Out-Null
 
 $map64 = @{
     'libmagiskboot.so'   = 'magiskboot'
-    'libmagiskinit.so'   = 'magiskinit'
+    'libmagiskinit.so' = 'magiskinit'
     'libmagisk.so'       = 'magisk'
     'libmagiskpolicy.so' = 'magiskpolicy'
     'libbusybox.so'      = 'busybox'
@@ -97,22 +116,22 @@ $map64 = @{
 foreach ($k in $map64.Keys) {
     $src = Join-Path $L64 $k
     if (Test-Path -LiteralPath $src) {
-        Invoke-Adb -AdbExe $adb -AdbArgs @('push', $src, ("/data/local/tmp/mgpatch/" + $map64[$k])) | Out-Null
+        Invoke-AdbChecked @('push', $src, ("/data/local/tmp/mgpatch/" + $map64[$k])) | Out-Null
     }
 }
 $m32 = Join-Path $L32 'libmagisk.so'
 if (Test-Path -LiteralPath $m32) {
-    Invoke-Adb -AdbExe $adb -AdbArgs @('push', $m32, '/data/local/tmp/mgpatch/magisk32') | Out-Null
+    Invoke-AdbChecked @('push', $m32, '/data/local/tmp/mgpatch/magisk32') | Out-Null
 }
 foreach ($f in @('boot_patch.sh', 'util_functions.sh', 'stub.apk')) {
     $src = Join-Path $A $f
     if (Test-Path -LiteralPath $src) {
-        Invoke-Adb -AdbExe $adb -AdbArgs @('push', $src, "/data/local/tmp/mgpatch/$f") | Out-Null
+        Invoke-AdbChecked @('push', $src, "/data/local/tmp/mgpatch/$f") | Out-Null
     }
 }
-Invoke-Adb -AdbExe $adb -AdbArgs @('push', $rcPath, '/data/local/tmp/mgpatch/init.rg477m.rc') | Out-Null
-Invoke-Adb -AdbExe $adb -AdbArgs @('push', $shPath, '/data/local/tmp/mgpatch/rg477m_setup.sh') | Out-Null
-Invoke-Adb -AdbExe $adb -AdbArgs @('push', $stockImg, '/data/local/tmp/mgpatch/init_boot.img') | Out-Null
+Invoke-AdbChecked @('push', $rcPath, '/data/local/tmp/mgpatch/init.rg477m.rc') | Out-Null
+Invoke-AdbChecked @('push', $shPath, '/data/local/tmp/mgpatch/rg477m_setup.sh') | Out-Null
+Invoke-AdbChecked @('push', $stockImg, '/data/local/tmp/mgpatch/init_boot.img') | Out-Null
 
 Write-Host "[INFO] Patching init_boot$Slot with PREINITDEVICE=metadata and headless overlay.d..." -ForegroundColor Cyan
 $runPatchLines = @(
@@ -132,9 +151,9 @@ $runPatchLines = @(
 )
 $runPatchPath = Join-Path $buildDir 'run_patch.sh'
 [System.IO.File]::WriteAllText($runPatchPath, (($runPatchLines -join "`n") + "`n"), [System.Text.UTF8Encoding]::new($false))
-Invoke-Adb -AdbExe $adb -AdbArgs @('push', $runPatchPath, '/data/local/tmp/mgpatch/run_patch.sh') | Out-Null
+Invoke-AdbChecked @('push', $runPatchPath, '/data/local/tmp/mgpatch/run_patch.sh') | Out-Null
 
-$patchOut = Invoke-Adb -AdbExe $adb -AdbArgs @('shell', 'sh /data/local/tmp/mgpatch/run_patch.sh')
+$patchOut = Invoke-AdbChecked @('shell', 'sh /data/local/tmp/mgpatch/run_patch.sh')
 Write-Host $patchOut
 if ($patchOut -notmatch 'init\.rg477m\.rc' -or $patchOut -notmatch 'rg477m_setup\.sh') {
     throw 'Headless overlay.d files were NOT injected into ramdisk.cpio!'
@@ -142,8 +161,8 @@ if ($patchOut -notmatch 'init\.rg477m\.rc' -or $patchOut -notmatch 'rg477m_setup
 
 $outImg = Join-Path $buildDir ("init_boot{0}_magisk.img" -f $Slot)
 if (Test-Path -LiteralPath $outImg) { Remove-Item -LiteralPath $outImg -Force }
-Invoke-Adb -AdbExe $adb -AdbArgs @('pull', '/data/local/tmp/mgpatch/new-boot.img', $outImg) | Out-Null
-Invoke-Adb -AdbExe $adb -AdbArgs @('shell', 'rm -rf /data/local/tmp/mgpatch') | Out-Null
+Invoke-AdbChecked @('pull', '/data/local/tmp/mgpatch/new-boot.img', $outImg) | Out-Null
+$null = Invoke-Adb -AdbExe $adb -AdbArgs @('shell', 'rm -rf /data/local/tmp/mgpatch')
 
 if (-not (Test-Path -LiteralPath $outImg) -or (Get-Item -LiteralPath $outImg).Length -lt 1048576) {
     throw "Patched image missing or too small: $outImg"
@@ -151,12 +170,8 @@ if (-not (Test-Path -LiteralPath $outImg) -or (Get-Item -LiteralPath $outImg).Le
 
 $stockVbmeta = Join-Path $script:ProjectRoot ("backups\stock\vbmeta{0}.img" -f $Slot)
 $outVbmeta   = Join-Path $buildDir ("vbmeta{0}_magisk.img" -f $Slot)
-$avbPy       = Join-Path $PSScriptRoot 'patch_avb.py'
-$avbOut      = & py -3 -I $avbPy $outImg $stockVbmeta $outVbmeta 2>&1
-if ($LASTEXITCODE -ne 0) {
-    throw "AVB signing failed: $avbOut"
-}
-Write-Host $avbOut -ForegroundColor Cyan
+$patchAvbPs  = Join-Path $PSScriptRoot 'Patch-Avb.ps1'
+& $patchAvbPs -InitBootMagisk $outImg -StockVbmeta $stockVbmeta -OutVbmeta $outVbmeta
 
 $shaOut = (Get-FileHash -LiteralPath $outImg -Algorithm SHA256).Hash.ToLower()
 $shaOut | Out-File -Encoding ascii "$outImg.sha256"
