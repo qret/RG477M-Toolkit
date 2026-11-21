@@ -8,6 +8,7 @@
                  Height="755"
                  MinWidth="940"
                  MinHeight="660"
+                 Icon="pack://application:,,,/Assets/app.ico"
                  WindowStartupLocation="CenterScreen"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="Mica">
@@ -23,7 +24,11 @@
         <ui:TitleBar Grid.Row="0"
                      Title="RG477M Root &amp; Performance Toolkit"
                      ShowMaximize="True"
-                     ShowMinimize="True"/>
+                     ShowMinimize="True">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/Assets/app.ico" Width="18" Height="18"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
 
         <!-- Основная рабочая область -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,10,20,12">
@@ -145,6 +150,8 @@
                             <ui:Button x:Name="BtnLangToggle"
                                        Content="EN"
                                        Padding="12,6"
+                                       ToolTipService.InitialShowDelay="250"
+                                       ToolTipService.ShowDuration="15000"
                                        Click="BtnLangToggle_Click"/>
                         </StackPanel>
                     </Grid>
@@ -179,6 +186,8 @@
                                        Content="Установить драйверы"
                                        Appearance="Primary"
                                        VerticalAlignment="Center"
+                                       ToolTipService.InitialShowDelay="250"
+                                       ToolTipService.ShowDuration="15000"
                                        Click="BtnInstallDrivers_Click"/>
                         </Grid>
                     </ui:Card>
@@ -186,13 +195,17 @@
                     <!-- Шаг 1: Бэкап стока -->
                     <ui:Card Padding="16" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock x:Name="Step1TitleText" Text="1. Readback-бэкап стоковых разделов" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="Step1TitleText" Text="1. Резервная копия заводской прошивки (бэкап)" FontSize="14" FontWeight="SemiBold"/>
                             <TextBlock x:Name="Step1DescText"
-                                       Text="Сохраняет boot, init_boot, vbmeta, preloader (A/B) и seccfg с проверкой SHA-256 перед любыми изменениями."
+                                       Text="Сохраняет заводские системные разделы на компьютер с проверкой SHA-256. Ничего не меняет на консоли и нужен для безопасного отката."
                                        FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,4,0,10"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <ui:Button x:Name="BtnReadbackDryRun" Content="Генерация XML" Margin="0,0,8,0" Click="BtnReadbackDryRun_Click"/>
-                                <ui:Button x:Name="BtnReadbackRun" Content="Снять бэкап" Appearance="Primary" Click="BtnReadbackRun_Click"/>
+                                <ui:Button x:Name="BtnReadbackRun"
+                                           Content="Снять бэкап"
+                                           Appearance="Primary"
+                                           ToolTipService.InitialShowDelay="250"
+                                           ToolTipService.ShowDuration="15000"
+                                           Click="BtnReadbackRun_Click"/>
                             </StackPanel>
                         </StackPanel>
                     </ui:Card>
@@ -200,30 +213,43 @@
                     <!-- Шаг 2: Патч и прошивка Magisk -->
                     <ui:Card Padding="16" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock x:Name="Step2TitleText" Text="2. Патч и установка Magisk v31.1 (без сброса данных)" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="Step2TitleText" Text="2. Установка root-доступа Magisk v31.1 (без сброса данных)" FontSize="14" FontWeight="SemiBold"/>
                             <TextBlock x:Name="Step2DescText"
-                                       Text="Патчит родной init_boot с headless-настройкой и подписывает vbmeta тем же AOSP testkey для заблокированного загрузчика."
+                                       Text="Автоматически подготовит патч из вашего бэкапа и установит Magisk без удаления игр, сохранений и настроек."
                                        FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,4,0,10"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <ui:Button x:Name="BtnPatchMagisk" Content="Собрать патч" Margin="0,0,8,0" Click="BtnPatchMagisk_Click"/>
-                                <ui:Button x:Name="BtnFlashDryRun" Content="Dry-Run прошивки" Margin="0,0,8,0" Click="BtnFlashDryRun_Click"/>
-                                <ui:Button x:Name="BtnFlashMagisk" Content="Прошить Magisk" Appearance="Primary" Click="BtnFlashMagisk_Click"/>
+                                <ui:Button x:Name="BtnFlashMagisk"
+                                           Content="Установить Magisk"
+                                           Appearance="Primary"
+                                           ToolTipService.InitialShowDelay="250"
+                                           ToolTipService.ShowDuration="15000"
+                                           Click="BtnFlashMagisk_Click"/>
                             </StackPanel>
                         </StackPanel>
                     </ui:Card>
 
-                    <!-- Шаг 3: Модуль производительности -->
+                    <!-- Шаг 3: Модуль оптимизации -->
                     <ui:Card Padding="16" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock x:Name="Step3TitleText" Text="3. Модуль производительности GPU/CPU (Баланс / Игровой)" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="Step3TitleText" Text="3. Модуль оптимизации RG477M (FPS, кулер, звук, экран)" FontSize="14" FontWeight="SemiBold"/>
                             <TextBlock x:Name="Step3DescText"
-                                       Text="Снимает лимит 900 МГц в Балансе, ускоряет GED-буст Mali-G615 и убирает 1-сек мерцания SurfaceFlinger при сохранении термозащиты."
+                                       Text="Стабильные 60 FPS в «Балансе», меньше нагрева в «Игровом», тихий плавный вентилятор, без мерцаний экрана и щелчков динамиков. Термозащита остаётся включённой."
                                        FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,4,0,10"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <ui:Button x:Name="BtnBuildModule" Content="Собрать ZIP" Margin="0,0,8,0" Click="BtnBuildModule_Click"/>
-                                <ui:Button x:Name="BtnModuleDryRun" Content="Dry-Run" Margin="0,0,8,0" Click="BtnModuleDryRun_Click"/>
-                                <ui:Button x:Name="BtnInstallPerfModule" Content="Установить модуль" Appearance="Primary" Margin="0,0,8,0" Click="BtnInstallPerfModule_Click"/>
-                                <ui:Button x:Name="BtnUninstallPerfModule" Content="Удалить" Click="BtnUninstallPerfModule_Click"/>
+                                <ui:Button x:Name="BtnInstallPerfModule"
+                                           Content="Установить модуль"
+                                           Appearance="Primary"
+                                           Margin="0"
+                                           ToolTipService.InitialShowDelay="250"
+                                           ToolTipService.ShowDuration="15000"
+                                           Click="BtnInstallPerfModule_Click"/>
+                                <ui:Button x:Name="BtnUninstallPerfModule"
+                                           Content="Удалить"
+                                           Margin="8,0,0,0"
+                                           Visibility="Collapsed"
+                                           ToolTipService.InitialShowDelay="250"
+                                           ToolTipService.ShowDuration="15000"
+                                           Click="BtnUninstallPerfModule_Click"/>
                             </StackPanel>
                         </StackPanel>
                     </ui:Card>
@@ -238,12 +264,16 @@
                             <StackPanel Margin="0,0,12,0">
                                 <TextBlock x:Name="Step4TitleText" Text="Откат на чистый сток V1.32" FontSize="14" FontWeight="SemiBold" Foreground="#FCA5A5"/>
                                 <TextBlock x:Name="Step4DescText"
-                                           Text="Возвращает оригинальные vbmeta и init_boot из локального Readback-бэкапа в 1 клик."
+                                           Text="Возвращает заводские системные разделы из вашей резервной копии и полностью удаляет root (Magisk). Игры и файлы сохранятся."
                                            FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,4,0,0"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <ui:Button x:Name="BtnRestoreDryRun" Content="Dry-Run" Margin="0,0,8,0" Click="BtnRestoreDryRun_Click"/>
-                                <ui:Button x:Name="BtnRestoreStock" Content="Откатить на сток" Appearance="Danger" Click="BtnRestoreStock_Click"/>
+                                <ui:Button x:Name="BtnRestoreStock"
+                                           Content="Откатить на сток"
+                                           Appearance="Danger"
+                                           ToolTipService.InitialShowDelay="250"
+                                           ToolTipService.ShowDuration="15000"
+                                           Click="BtnRestoreStock_Click"/>
                             </StackPanel>
                         </Grid>
                     </ui:Card>
@@ -274,8 +304,17 @@
                          Foreground="#E4E4E7"
                          Padding="10"/>
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                    <ui:Button x:Name="BtnCopyLog" Content="Копировать лог" Margin="0,0,8,0" Click="BtnCopyLog_Click"/>
-                    <ui:Button x:Name="BtnClearLog" Content="Очистить" Click="BtnClearLog_Click"/>
+                    <ui:Button x:Name="BtnCopyLog"
+                               Content="Копировать лог"
+                               Margin="0,0,8,0"
+                               ToolTipService.InitialShowDelay="250"
+                               ToolTipService.ShowDuration="15000"
+                               Click="BtnCopyLog_Click"/>
+                    <ui:Button x:Name="BtnClearLog"
+                               Content="Очистить"
+                               ToolTipService.InitialShowDelay="250"
+                               ToolTipService.ShowDuration="15000"
+                               Click="BtnClearLog_Click"/>
                 </StackPanel>
             </Grid>
         </Expander>

@@ -13,6 +13,7 @@ Rooting a locked-bootloader MediaTek handheld normally requires hunting down dri
 - **Full 60 FPS in Balance mode:** Removes the stock `900 MHz` Mali-G615 GPU cap and slow scaling (~33% lower GPU frame times in heavy 3D tests), while keeping idle clocks low (`265 MHz` GPU / `400 MHz` CPU).
 - **Less heat in Game mode:** Replaces stock CPU `performance` lock with fast `schedutil` + `uclamp` tuning.
 - **Quiet, smooth fan:** Replaces erratic stock `bal` and `turbo` fan curves ("fan hunting") with ~10s EMA-smoothed temperature tracking and gentle speed ramps (silent when cool or screen-off; `silent`/`fixed` modes stay untouched).
+- **No speaker clicks/pops (timer-free):** Holds the analog speaker amp enabled (`is_fm_enable`) while the screen is on and no 3.5 mm headset is plugged — eliminating GPIO 5 pops without touching stock 3s `AudioFlinger`/DAC standby, with automatic amp power-off on screen off (respecting active background playback) and instant 3.5 mm jack switching.
 - **Cleaner frame pacing & full safety:** Fixes stock `debug.sf.disable_backpressure=1` (eliminating ~1s display flickers), keeps `thermal_core` active at all times, backs off above `85 °C`, and auto-disables on 2 failed boots.
 
 ### Screenshots
@@ -29,7 +30,7 @@ Rooting a locked-bootloader MediaTek handheld normally requires hunting down dri
 
 ### Quick Start (3 Steps)
 1. Download and extract **`RG477MToolkit.zip`** from **Releases**, then run **`launch-ui.bat`** (or `RG477MToolkit.exe`). If prompted, click **Install Drivers**.
-2. Enable **USB Debugging** on RG477M, plug in USB-C, and run **Step 1 (Readback Backup)** → **Step 2 (Build Patch & Flash Magisk)**.
+2. Enable **USB Debugging** on RG477M, plug in USB-C, and run **Step 1 (Create Backup)** → **Step 2 (Install Magisk)**.
 3. After reboot, click **Step 3 (Install Module)** and reboot once more.
 
 ### Detailed Guides
@@ -55,6 +56,7 @@ Credits & upstream licences: [THANKS.md](THANKS.md) · Licensed under [MIT](LICE
 - **Ровные 60 FPS даже в «Балансе»:** снимает стоковый потолок `900 МГц` на GPU Mali-G615 и ускоряет отклик (время кадра GPU ниже примерно на треть в тяжёлом 3D), при этом в меню и простое частоты спокойно падают до минимума (`265 МГц` GPU / `400 МГц` CPU).
 - **Меньше нагрева в режиме `Game`:** заменяет стоковый лок CPU `performance` на быстрый `schedutil` + `uclamp`.
 - **Тихий и плавный вентилятор:** убирает «шторм» и плавающие обороты в режимах `bal` и `turbo` за счёт ~10-секундного сглаживания температуры и плавного шага PWM (тишина в простое и со спящим экраном; режимы `silent` и `fixed` остаются за шторкой).
+- **Без щелчков динамиков (без таймеров):** удерживает аналоговый усилитель включённым (`is_fm_enable`), пока экран активен и не подключены 3.5 мм наушники — убирает щелчки от дёрганья `GPIO 5` при сохранении штатного 3-секундного standby `AudioFlinger`/ЦАП, автоматически обесточивает усилитель в сне (не обрывая фоновую музыку) и переключается при подключении 3.5 мм джека.
 - **Плавность кадров и защита:** исправляет стоковый флаг `debug.sf.disable_backpressure=1` (убирает ~1-сек. мерцания), оставляет штатную термозащиту `thermal_core` включённой, приглушает буст выше `85 °C` и сам отключается при 2 неудачных загрузках.
 
 ### Скриншоты приложения
@@ -71,7 +73,7 @@ Credits & upstream licences: [THANKS.md](THANKS.md) · Licensed under [MIT](LICE
 
 ### Быстрый старт (3 шага)
 1. Скачайте и распакуйте **`RG477MToolkit.zip`** из раздела **Releases**, запустите **`launch-ui.bat`** (или `RG477MToolkit.exe`). Если появится жёлтый баннер — нажмите **Установить драйверы**.
-2. Включите **Отладку по USB** на RG477M, подключите кабель USB-C и выполните **Шаг 1 (Снять бэкап)** → **Шаг 2 (Собрать патч → Прошить Magisk)**.
+2. Включите **Отладку по USB** на RG477M, подключите кабель USB-C и выполните **Шаг 1 (Снять бэкап)** → **Шаг 2 (Установить Magisk)**.
 3. После загрузки нажмите **Шаг 3 (Установить модуль)** и перезагрузите консоль.
 
 ### Расширенные руководства

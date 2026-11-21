@@ -12,6 +12,8 @@ public sealed class ToolkitPaths
     public string? DriverInstallerExe { get; private set; }
     public string ToolkitVersion { get; private set; } = "0.1.0";
     public string TargetMagiskVersion { get; private set; } = "v31.1";
+    public string BundledModuleVersion { get; private set; } = "v0.1.0";
+    public int BundledModuleVersionCode { get; private set; } = 100;
 
     public string BackupsStockDir => Path.Combine(ProjectRoot, "backups", "stock");
     public string ReadbackScript => Path.Combine(ProjectRoot, "scripts", "backup", "readback-stock.ps1");
@@ -25,6 +27,7 @@ public sealed class ToolkitPaths
     {
         ProjectRoot = ResolveProjectRoot();
         LoadVersionProperties();
+        LoadBundledModuleInfo();
         LoadBundledRuntimePaths();
         LoadLocalPaths();
         ResolveDriverInstaller();
@@ -99,6 +102,27 @@ public sealed class ToolkitPaths
             var val = line[(idx + 1)..].Trim();
             if (key.Equals("APP_VERSION", StringComparison.OrdinalIgnoreCase) || key.Equals("VERSION", StringComparison.OrdinalIgnoreCase)) ToolkitVersion = val;
             else if (key.Equals("MAGISK_VERSION", StringComparison.OrdinalIgnoreCase)) TargetMagiskVersion = val;
+        }
+    }
+
+    private void LoadBundledModuleInfo()
+    {
+        var path = Path.Combine(ProjectRoot, "magisk", "module", "module.prop");
+        if (!File.Exists(path)) return;
+
+        foreach (var raw in File.ReadAllLines(path))
+        {
+            var line = raw.Trim();
+            if (string.IsNullOrEmpty(line) || line.StartsWith('#')) continue;
+            var idx = line.IndexOf('=');
+            if (idx <= 0) continue;
+
+            var key = line[..idx].Trim();
+            var val = line[(idx + 1)..].Trim();
+            if (key.Equals("version", StringComparison.Ordinal))
+                BundledModuleVersion = val;
+            else if (key.Equals("versionCode", StringComparison.Ordinal) && int.TryParse(val, out var code))
+                BundledModuleVersionCode = code;
         }
     }
 

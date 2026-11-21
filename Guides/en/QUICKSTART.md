@@ -8,11 +8,9 @@
 
 ## 2. Step-by-Step Setup
 1. Launch `RG477MToolkit.exe` (or `launch-ui.bat`). Confirm the status badge shows **ADB Online** and build **V1.32**.
-2. **Step 1 — Stock Readback Backup:** click **Run Readback**. This backs up `preloader_a/b`, `boot_a/b`, `init_boot_a/b`, `vbmeta_a/b`, and `seccfg` with `.sha256` checksums into `backups/stock/`. Never skip this step!
-3. **Step 2 — Patch & Flash Magisk v31.1:**
-   - Click **Build Patch** to patch your stock `init_boot` (with headless `overlay.d` setup) and update the `init_boot` descriptor inside `vbmeta` using the AOSP `testkey_rsa2048`.
-   - Inspect **Dry-Run Flash**, then click **Flash Magisk**. The device will reboot automatically and SP Flash Tool will catch `PreLoader VCOM`.
-4. **Step 3 — Performance Module:** once booted with Magisk, click **Install Module** and reboot the handheld.
+2. **Step 1 — Stock Firmware Backup:** click **Create Backup**. This saves `preloader_a/b`, `boot_a/b`, `init_boot_a/b`, `vbmeta_a/b`, and `seccfg` with `.sha256` checksums into `backups/stock/`. Once verified, the button turns green (**✓ Backup Ready**). Never skip this step!
+3. **Step 2 — Install Magisk v31.1 Root:** click **Install Magisk**. The app automatically builds the patched `init_boot` + AOSP `testkey` `vbmeta` from your backup, reboots the device cleanly over ADB, and flashes via `PreLoader VCOM` without data wipe.
+4. **Step 3 — Optimization Module:** once booted with Magisk, click **Install Module** (uses the pre-bundled ZIP directly) and reboot the handheld. Once installed, the button turns green (**✓ Installed**) and an **Uninstall** button appears if you ever want to remove it.
 
 ## 3. Manual BROM & Recovery Hints
 - **Manual BROM entry:** power off the RG477M completely, hold **Vol+ and Vol- together (do NOT press Power!)**, and plug in the USB-C cable.

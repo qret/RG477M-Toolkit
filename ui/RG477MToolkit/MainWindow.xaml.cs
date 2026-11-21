@@ -91,6 +91,9 @@ public partial class MainWindow : FluentWindow
                 ? "Drivers were not detected on this PC. Install once to enable Readback and flashing."
                 : "Драйверы не найдены в системе. Установите их один раз для работы Readback и прошивки.";
             BtnInstallDrivers.Content = _isEnglish ? "Install Drivers" : "Установить драйверы";
+            BtnInstallDrivers.ToolTip = _isEnglish
+                ? "Launches the MediaTek USB VCOM / ADB driver installer so Windows can recognize your console during backup and flashing."
+                : "Запустит установщик драйверов MediaTek USB VCOM / ADB, чтобы компьютер корректно видел консоль при бэкапе и прошивке.";
         }
     }
 
@@ -99,6 +102,7 @@ public partial class MainWindow : FluentWindow
         if (_isEnglish)
         {
             BtnLangToggle.Content = "RU";
+            BtnLangToggle.ToolTip = "Switch the application interface between Russian and English.";
             DeviceCardTitleText.Text = "Device Status";
             LabelFirmwareCaption.Text = "Firmware";
             LabelSlotCaption.Text = "Active Slot";
@@ -110,32 +114,28 @@ public partial class MainWindow : FluentWindow
             GuideBromText.Text = "• Manual BROM (unbrick): power off completely, hold Vol- and Vol+ (do NOT press Power!) and plug in USB-C.";
             WizardTitleText.Text = "Root & Performance Setup Wizard";
             ToolkitSubtitleText.Text = $"Anbernic RG477M • Stock V1.32 • Magisk {_paths.TargetMagiskVersion} • Toolkit v{_paths.ToolkitVersion}";
-            Step1TitleText.Text = "1. Stock Readback Backup";
-            Step1DescText.Text = "Reads back stock boot, init_boot, vbmeta, preloader (A/B) and seccfg with SHA-256 verification before any writes.";
-            BtnReadbackDryRun.Content = "Generate XML";
-            BtnReadbackRun.Content = "Run Readback";
-            Step2TitleText.Text = $"2. Patch & Flash Magisk {_paths.TargetMagiskVersion} (No Data Wipe)";
-            Step2DescText.Text = "Patches stock init_boot with headless overlay setup and re-signs vbmeta with AOSP testkey for locked bootloader.";
-            BtnPatchMagisk.Content = "Build Patch";
-            BtnFlashDryRun.Content = "Dry-Run Flash";
-            BtnFlashMagisk.Content = "Flash Magisk";
-            Step3TitleText.Text = "3. Performance & Frame Pacing Module (Balance / Game)";
-            Step3DescText.Text = "Unlocks 900 MHz GPU cap in Balance, tunes Mali-G615 GED boost and eliminates 1s SurfaceFlinger flicker while keeping thermal_core active.";
-            BtnBuildModule.Content = "Build ZIP";
-            BtnModuleDryRun.Content = "Dry-Run";
-            BtnInstallPerfModule.Content = "Install Module";
+            Step1TitleText.Text = "1. Stock Firmware Backup";
+            Step1DescText.Text = "Saves factory system partitions to your PC with SHA-256 verification. Changes nothing on the handheld and guarantees safe rollback.";
+            Step2TitleText.Text = $"2. Install Magisk {_paths.TargetMagiskVersion} Root (No Data Wipe)";
+            Step2DescText.Text = "Automatically builds the patch from your backup and installs Magisk without erasing games, saves, or settings.";
+            Step3TitleText.Text = "3. RG477M Optimization Module (FPS, Fan, Audio, Display)";
+            Step3DescText.Text = "Smooth 60 FPS in Balance mode, cooler Game mode, quiet smooth fan curves, no display flicker, and no speaker clicks/pops — keeping stock thermal protection active.";
             BtnUninstallPerfModule.Content = "Uninstall";
+            BtnUninstallPerfModule.ToolTip = "Marks the optimization module for removal. After the next reboot the console returns to stock performance, fan, display, and audio settings (Magisk root stays intact).";
             Step4TitleText.Text = "1-Click Stock V1.32 Rollback";
-            Step4DescText.Text = "Restores original vbmeta and init_boot from local Readback backup.";
-            BtnRestoreDryRun.Content = "Dry-Run";
+            Step4DescText.Text = "Restores original factory partitions from your local backup and completely removes root (Magisk). Your games and data stay intact.";
             BtnRestoreStock.Content = "Restore Stock";
+            BtnRestoreStock.ToolTip = "Flashes your original factory init_boot and vbmeta from the saved PC backup and completely removes Magisk root. Your games and user files stay untouched.";
             LogExpander.Header = "Operation Console (click to expand)";
             BtnCopyLog.Content = "Copy Log";
+            BtnCopyLog.ToolTip = "Copies the full operation log below to the Windows clipboard.";
             BtnClearLog.Content = "Clear";
+            BtnClearLog.ToolTip = "Clears text from the operation log window.";
         }
         else
         {
             BtnLangToggle.Content = "EN";
+            BtnLangToggle.ToolTip = "Переключить язык интерфейса программы (русский / английский).";
             DeviceCardTitleText.Text = "Состояние консоли";
             LabelFirmwareCaption.Text = "Прошивка";
             LabelSlotCaption.Text = "Активный слот";
@@ -147,29 +147,27 @@ public partial class MainWindow : FluentWindow
             GuideBromText.Text = "• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol- и Vol+ (НЕ нажимайте Power!) и вставьте USB-C.";
             WizardTitleText.Text = "Мастер установки и оптимизации";
             ToolkitSubtitleText.Text = $"Anbernic RG477M • Stock V1.32 • Magisk {_paths.TargetMagiskVersion} • Toolkit v{_paths.ToolkitVersion}";
-            Step1TitleText.Text = "1. Readback-бэкап стоковых разделов";
-            Step1DescText.Text = "Сохраняет boot, init_boot, vbmeta, preloader (A/B) и seccfg с проверкой SHA-256 перед любыми изменениями.";
-            BtnReadbackDryRun.Content = "Генерация XML";
-            BtnReadbackRun.Content = "Снять бэкап";
-            Step2TitleText.Text = $"2. Патч и установка Magisk {_paths.TargetMagiskVersion} (без сброса данных)";
-            Step2DescText.Text = "Патчит родной init_boot с headless-настройкой и подписывает vbmeta тем же AOSP testkey для заблокированного загрузчика.";
-            BtnPatchMagisk.Content = "Собрать патч";
-            BtnFlashDryRun.Content = "Dry-Run прошивки";
-            BtnFlashMagisk.Content = "Прошить Magisk";
-            Step3TitleText.Text = "3. Модуль производительности GPU/CPU (Баланс / Игровой)";
-            Step3DescText.Text = "Снимает лимит 900 МГц в Балансе, ускоряет GED-буст Mali-G615 и убирает 1-сек мерцания SurfaceFlinger при сохранении термозащиты.";
-            BtnBuildModule.Content = "Собрать ZIP";
-            BtnModuleDryRun.Content = "Dry-Run";
-            BtnInstallPerfModule.Content = "Установить модуль";
+            Step1TitleText.Text = "1. Резервная копия заводской прошивки (бэкап)";
+            Step1DescText.Text = "Сохраняет заводские системные разделы на компьютер с проверкой SHA-256. Ничего не меняет на консоли и нужен для безопасного отката.";
+            Step2TitleText.Text = $"2. Установка root-доступа Magisk {_paths.TargetMagiskVersion} (без сброса данных)";
+            Step2DescText.Text = "Автоматически подготовит патч из вашего бэкапа и установит Magisk без удаления игр, сохранений и настроек.";
+            Step3TitleText.Text = "3. Модуль оптимизации RG477M (FPS, кулер, звук, экран)";
+            Step3DescText.Text = "Стабильные 60 FPS в «Балансе», меньше нагрева в «Игровом», тихий плавный вентилятор, без мерцаний экрана и щелчков динамиков. Термозащита остаётся включённой.";
             BtnUninstallPerfModule.Content = "Удалить";
+            BtnUninstallPerfModule.ToolTip = "Удалит модуль оптимизации с консоли: после следующей перезагрузки вернутся заводские настройки частот, вентилятора, экрана и звука (сам root Magisk останется).";
             Step4TitleText.Text = "Откат на чистый сток V1.32";
-            Step4DescText.Text = "Возвращает оригинальные vbmeta и init_boot из локального Readback-бэкапа в 1 клик.";
-            BtnRestoreDryRun.Content = "Dry-Run";
+            Step4DescText.Text = "Возвращает заводские системные разделы из вашей резервной копии и полностью удаляет root (Magisk). Игры и файлы сохранятся.";
             BtnRestoreStock.Content = "Откатить на сток";
+            BtnRestoreStock.ToolTip = "Прошьёт обратно оригинальные заводские разделы (init_boot и vbmeta) из сохранённого бэкапа и полностью уберёт root Magisk. Ваши игры и файлы сохранятся.";
             LogExpander.Header = "Консоль операций (нажмите, чтобы развернуть)";
             BtnCopyLog.Content = "Копировать лог";
+            BtnCopyLog.ToolTip = "Скопировать весь текст из консоли операций в буфер обмена Windows.";
             BtnClearLog.Content = "Очистить";
+            BtnClearLog.ToolTip = "Очистить окно лога операций внизу.";
         }
+
+        UpdateDriverUi();
+        UpdateActionButtonsState(_latestState);
     }
 
     private async Task RefreshDeviceStateAsync()
@@ -217,9 +215,95 @@ public partial class MainWindow : FluentWindow
                 StatusBadgeText.Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA1, 0xAA));
                 break;
         }
+        UpdateActionButtonsState(state);
+    }
+
+    private void UpdateActionButtonsState(DeviceStateSnapshot state)
+    {
+        if (state.HasStockBackup)
+        {
+            BtnReadbackRun.Appearance = ControlAppearance.Success;
+            BtnReadbackRun.Content = _isEnglish ? "✓ Backup Ready" : "✓ Бэкап снят";
+            BtnReadbackRun.ToolTip = _isEnglish
+                ? "A full verified stock firmware backup is already saved in backups/stock. Click only if you want to create a fresh copy."
+                : "Полная проверенная копия заводской прошивки уже сохранена на компьютере (backups/stock). Нажмите только если хотите снять бэкап заново.";
+        }
+        else
+        {
+            BtnReadbackRun.Appearance = ControlAppearance.Primary;
+            BtnReadbackRun.Content = _isEnglish ? "Create Backup" : "Снять бэкап";
+            BtnReadbackRun.ToolTip = _isEnglish
+                ? "Saves factory system partitions from RG477M to your PC. Changes nothing on the console — required for safe rollback and Magisk installation."
+                : "Сохранит заводские системные разделы RG477M на компьютер. Ничего не меняет на консоли — копия нужна, чтобы безопасно ставить Magisk и в любой момент откатиться на сток.";
+        }
+
+        if (state.IsMagiskInstalled)
+        {
+            BtnFlashMagisk.Appearance = ControlAppearance.Success;
+            BtnFlashMagisk.Content = _isEnglish ? "✓ Magisk Installed" : "✓ Magisk установлен";
+            BtnFlashMagisk.ToolTip = _isEnglish
+                ? "Root access (Magisk) is already active on this handheld. Click to rebuild and re-flash Magisk if needed."
+                : "Root-доступ (Magisk) уже установлен и работает на подключённой консоли. При необходимости можно переустановить заново по клику.";
+        }
+        else
+        {
+            BtnFlashMagisk.Appearance = ControlAppearance.Primary;
+            BtnFlashMagisk.Content = _isEnglish ? "Install Magisk" : "Установить Magisk";
+            BtnFlashMagisk.ToolTip = _isEnglish
+                ? "Automatically prepares a patched boot image from your backup and installs Magisk root without wiping games, saves, or apps."
+                : "Автоматически соберёт патч из вашего бэкапа и установит root-доступ Magisk. Ваши игры, сохранения и настройки останутся на месте.";
+        }
+
+        switch (state.ModuleState)
+        {
+            case PerfModuleState.InstalledUpToDate:
+                BtnInstallPerfModule.Appearance = ControlAppearance.Success;
+                BtnInstallPerfModule.Content = _isEnglish ? "✓ Installed" : "✓ Установлен";
+                BtnInstallPerfModule.ToolTip = _isEnglish
+                    ? $"Optimization module ({state.InstalledModuleVersion}) is already installed on this console. Click to reinstall over the current version."
+                    : $"Модуль оптимизации ({state.InstalledModuleVersion}) уже установлен на консоли. Нажмите, если хотите переустановить его поверх.";
+                BtnUninstallPerfModule.Visibility = Visibility.Visible;
+                BtnUninstallPerfModule.Content = _isEnglish ? "Uninstall" : "Удалить";
+                BtnUninstallPerfModule.IsEnabled = !_isBusy;
+                break;
+
+            case PerfModuleState.UpdateAvailable:
+                BtnInstallPerfModule.Appearance = ControlAppearance.Primary;
+                BtnInstallPerfModule.Content = _isEnglish ? "Update Module" : "Обновить модуль";
+                BtnInstallPerfModule.ToolTip = _isEnglish
+                    ? $"Installed version: {state.InstalledModuleVersion} → new version {_paths.BundledModuleVersion} is ready. Updates in place without data loss."
+                    : $"На консоли установлена версия {state.InstalledModuleVersion} — доступна новая {_paths.BundledModuleVersion}. Обновит модуль без потери настроек.";
+                BtnUninstallPerfModule.Visibility = Visibility.Visible;
+                BtnUninstallPerfModule.Content = _isEnglish ? "Uninstall" : "Удалить";
+                BtnUninstallPerfModule.IsEnabled = !_isBusy;
+                break;
+
+            case PerfModuleState.PendingRemoval:
+                BtnInstallPerfModule.Appearance = ControlAppearance.Secondary;
+                BtnInstallPerfModule.Content = _isEnglish ? "Reinstall" : "Установить заново";
+                BtnInstallPerfModule.ToolTip = _isEnglish
+                    ? "The module is marked for removal on next reboot. Click to cancel removal by reinstalling."
+                    : "Модуль помечен на удаление при следующей перезагрузке. Нажмите, чтобы установить заново и отменить удаление.";
+                BtnUninstallPerfModule.Visibility = Visibility.Visible;
+                BtnUninstallPerfModule.Content = _isEnglish ? "Removal Pending" : "Удаление после ребута";
+                BtnUninstallPerfModule.IsEnabled = false;
+                break;
+
+            default:
+                BtnInstallPerfModule.Appearance = ControlAppearance.Primary;
+                BtnInstallPerfModule.Content = _isEnglish ? "Install Module" : "Установить модуль";
+                BtnInstallPerfModule.ToolTip = _isEnglish
+                    ? "Installs the RG477M optimization module via Magisk: 60 FPS in Balance, quiet smooth fan curves, no display flicker, and no speaker clicks. Easily removable."
+                    : "Установит пакет улучшений RG477M через Magisk: 60 FPS в «Балансе», тихий плавный вентилятор, без мерцаний экрана и щелчков динамиков. Легко удаляется кнопкой «Удалить».";
+                BtnUninstallPerfModule.Visibility = Visibility.Collapsed;
+                break;
+        }
     }
 
     private async Task ExecuteScriptAsync(string scriptPath, string args, bool expandLog = true)
+        => await ExecuteScriptSequenceAsync((scriptPath, args));
+
+    private async Task ExecuteScriptSequenceAsync(params (string ScriptPath, string Args)[] steps)
     {
         if (_isBusy)
         {
@@ -229,11 +313,21 @@ public partial class MainWindow : FluentWindow
 
         _isBusy = true;
         SetActionButtonsEnabled(false);
-        if (expandLog) LogExpander.IsExpanded = true;
+        LogExpander.IsExpanded = true;
 
         try
         {
-            await _runner.RunPowerShellAsync(scriptPath, args, AppendLog);
+            foreach (var (scriptPath, args) in steps)
+            {
+                var exitCode = await _runner.RunPowerShellAsync(scriptPath, args, AppendLog);
+                if (exitCode != 0)
+                {
+                    AppendLog("[ERR] " + (_isEnglish
+                        ? $"Step aborted because script exited with code {exitCode}."
+                        : $"Операция остановлена (код завершения: {exitCode})."));
+                    break;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -249,16 +343,10 @@ public partial class MainWindow : FluentWindow
 
     private void SetActionButtonsEnabled(bool enabled)
     {
-        BtnReadbackDryRun.IsEnabled = enabled;
         BtnReadbackRun.IsEnabled = enabled;
-        BtnPatchMagisk.IsEnabled = enabled;
-        BtnFlashDryRun.IsEnabled = enabled;
         BtnFlashMagisk.IsEnabled = enabled;
-        BtnBuildModule.IsEnabled = enabled;
-        BtnModuleDryRun.IsEnabled = enabled;
         BtnInstallPerfModule.IsEnabled = enabled;
-        BtnUninstallPerfModule.IsEnabled = enabled;
-        BtnRestoreDryRun.IsEnabled = enabled;
+        BtnUninstallPerfModule.IsEnabled = enabled && _latestState.ModuleState != PerfModuleState.PendingRemoval;
         BtnRestoreStock.IsEnabled = enabled;
     }
 
@@ -295,17 +383,23 @@ public partial class MainWindow : FluentWindow
         }
     }
 
-    private async void BtnReadbackDryRun_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.ReadbackScript, "-GenerateOnly");
-
     private async void BtnReadbackRun_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.ReadbackScript, "");
+    {
+        if (_latestState.HasStockBackup)
+        {
+            var confirm = System.Windows.MessageBox.Show(
+                _isEnglish
+                    ? "A verified stock firmware backup already exists in backups/stock.\n\nDo you want to read back and overwrite it again?"
+                    : "Полная проверенная резервная копия прошивки в backups/stock уже есть.\n\nСнять бэкап заново и перезаписать файлы?",
+                _isEnglish ? "Backup Already Exists" : "Бэкап уже существует",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
 
-    private async void BtnPatchMagisk_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.PatchMagiskScript, "");
+            if (confirm != System.Windows.MessageBoxResult.Yes) return;
+        }
 
-    private async void BtnFlashDryRun_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.FlashMagiskScript, "");
+        await ExecuteScriptAsync(_paths.ReadbackScript, "");
+    }
 
     private async void BtnFlashMagisk_Click(object sender, RoutedEventArgs e)
     {
@@ -313,39 +407,53 @@ public partial class MainWindow : FluentWindow
         {
             System.Windows.MessageBox.Show(
                 _isEnglish
-                    ? "Run a full Stock Readback Backup first (Step 1)."
-                    : "Сначала выполните полный Readback-бэкап стоковых разделов (Шаг 1).",
-                _isEnglish ? "Backup not found" : "Бэкап не найден",
+                    ? "Run a full Stock Firmware Backup first (Step 1)."
+                    : "Сначала снимите резервную копию заводской прошивки (Шаг 1).",
+                _isEnglish ? "Backup Not Found" : "Бэкап не найден",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);
             return;
         }
 
+        string prompt = _latestState.IsMagiskInstalled
+            ? (_isEnglish
+                ? "Magisk is already installed on this handheld.\n\nRebuild the patch from your backup and re-flash Magisk over it?"
+                : "Magisk уже установлен на этой консоли.\n\nПересобрать патч из бэкапа и прошить Magisk заново?")
+            : (_isEnglish
+                ? "Build the patch from your backup and install Magisk root onto RG477M (no data wipe)?\n\nIf connected via ADB, the device will automatically reboot into Preloader for flashing."
+                : "Подготовить патч из вашего бэкапа и установить root-доступ Magisk на RG477M (без сброса данных)?\n\nЕсли консоль подключена по ADB, она сама перезагрузится в режим прошивки.");
+
         var confirm = System.Windows.MessageBox.Show(
-            _isEnglish
-                ? "Write patched init_boot and vbmeta (testkey) to RG477M storage?\n\nIf connected via ADB, the device will auto-reboot into Preloader for flashing."
-                : "Записать пропатченный init_boot и vbmeta (testkey) в память RG477M?\n\nЕсли устройство подключено по ADB, оно автоматически перезагрузится в Preloader для прошивки.",
-            _isEnglish ? "Flash Confirmation" : "Подтверждение прошивки",
+            prompt,
+            _isEnglish ? "Magisk Installation Confirmation" : "Подтверждение установки Magisk",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
 
         if (confirm != System.Windows.MessageBoxResult.Yes) return;
-        await ExecuteScriptAsync(_paths.FlashMagiskScript, "-Execute");
+
+        await ExecuteScriptSequenceAsync(
+            (_paths.PatchMagiskScript, ""),
+            (_paths.FlashMagiskScript, "-Execute"));
     }
-
-    private async void BtnBuildModule_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.BuildPerfModuleScript, "");
-
-    private async void BtnModuleDryRun_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.InstallPerfModuleScript, "-DryRun");
 
     private async void BtnInstallPerfModule_Click(object sender, RoutedEventArgs e)
     {
+        string prompt = _latestState.ModuleState switch
+        {
+            PerfModuleState.InstalledUpToDate => _isEnglish
+                ? $"Optimization module ({_latestState.InstalledModuleVersion}) is already installed.\n\nReinstall it over the current version?"
+                : $"Модуль оптимизации ({_latestState.InstalledModuleVersion}) уже установлен.\n\nПереустановить его поверх текущей версии?",
+            PerfModuleState.UpdateAvailable => _isEnglish
+                ? $"Update optimization module from {_latestState.InstalledModuleVersion} to {_paths.BundledModuleVersion} on the connected RG477M?"
+                : $"Обновить модуль оптимизации с {_latestState.InstalledModuleVersion} до {_paths.BundledModuleVersion} на подключённом RG477M?",
+            _ => _isEnglish
+                ? "Install the RG477M optimization module (60 FPS Balance, smooth fan, click-free speaker audio) onto the connected handheld?"
+                : "Установить модуль оптимизации RG477M (60 FPS в «Балансе», тихий вентилятор, чистый звук без щелчков) на подключённую консоль?"
+        };
+
         var confirm = System.Windows.MessageBox.Show(
-            _isEnglish
-                ? "Install rg477m_perf_tuning Magisk module onto the connected RG477M?"
-                : "Установить Magisk-модуль производительности rg477m_perf_tuning на подключённый RG477M?",
-            _isEnglish ? "Install Module" : "Установка модуля Magisk",
+            prompt,
+            _isEnglish ? "Optimization Module" : "Модуль оптимизации",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Question);
 
@@ -357,8 +465,8 @@ public partial class MainWindow : FluentWindow
     {
         var confirm = System.Windows.MessageBox.Show(
             _isEnglish
-                ? "Mark rg477m_perf_tuning module for removal on next reboot?"
-                : "Пометить модуль rg477m_perf_tuning на удаление при следующей перезагрузке?",
+                ? "Mark the RG477M optimization module for removal on next reboot?"
+                : "Удалить модуль оптимизации RG477M (изменения отключатся после перезагрузки)?",
             _isEnglish ? "Uninstall Module" : "Удаление модуля",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
@@ -366,9 +474,6 @@ public partial class MainWindow : FluentWindow
         if (confirm != System.Windows.MessageBoxResult.Yes) return;
         await ExecuteScriptAsync(_paths.InstallPerfModuleScript, "-Execute -Uninstall");
     }
-
-    private async void BtnRestoreDryRun_Click(object sender, RoutedEventArgs e)
-        => await ExecuteScriptAsync(_paths.RestoreScript, "");
 
     private async void BtnRestoreStock_Click(object sender, RoutedEventArgs e)
     {
@@ -419,6 +524,9 @@ public partial class MainWindow : FluentWindow
                         Firmware = "—",
                         ActiveSlot = "—",
                         MagiskStatus = isEn ? "Not checked" : "Не проверено",
+                        IsMagiskInstalled = false,
+                        ModuleState = PerfModuleState.NotInstalled,
+                        HasStockBackup = false,
                         BackupSummary = isEn ? "Not found" : "Бэкап не найден"
                     }
                 ),
@@ -434,9 +542,12 @@ public partial class MainWindow : FluentWindow
                         Firmware = "V1.32 (V654202605282152)",
                         ActiveSlot = "_b",
                         MagiskStatus = "v31.1 (root)",
+                        IsMagiskInstalled = true,
+                        ModuleState = PerfModuleState.InstalledUpToDate,
+                        InstalledModuleVersion = "v0.1.0",
                         IsSupportedBuild = true,
                         HasStockBackup = true,
-                        BackupSummary = "7/7 SHA-256 OK"
+                        BackupSummary = "8/8 SHA-256 OK"
                     }
                 ),
                 (
@@ -451,9 +562,11 @@ public partial class MainWindow : FluentWindow
                         Firmware = "V1.32",
                         ActiveSlot = "_b",
                         MagiskStatus = "—",
+                        IsMagiskInstalled = false,
+                        ModuleState = PerfModuleState.NotInstalled,
                         ComPort = "COM5",
                         HasStockBackup = true,
-                        BackupSummary = "7/7 SHA-256 OK"
+                        BackupSummary = "8/8 SHA-256 OK"
                     }
                 ),
                 (
@@ -470,8 +583,10 @@ public partial class MainWindow : FluentWindow
                         Firmware = "—",
                         ActiveSlot = "—",
                         MagiskStatus = "—",
+                        IsMagiskInstalled = false,
+                        ModuleState = PerfModuleState.NotInstalled,
                         HasStockBackup = true,
-                        BackupSummary = "7/7 SHA-256 OK"
+                        BackupSummary = "8/8 SHA-256 OK"
                     }
                 )
             };

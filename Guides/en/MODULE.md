@@ -6,6 +6,7 @@ On Stock **V1.32**, `com.anbernic.control` configures MT6897 (Dimensity 8300) in
 2. **Game mode (`game`) locks CPU governors to `performance`**, keeping cores hot even in menus and light scenes.
 3. **Stock `bal` / `turbo` fan modes react to raw 1-second `soc_max` spikes** without smoothing, causing constant revving up and down ("fan hunting").
 4. **Stock ships with `debug.sf.disable_backpressure=1`**, which desynchronizes SurfaceFlinger and Mali-G615 and causes periodic ~1-second display flickers (`BLASTBufferQueue`).
+5. **Speaker clicks/pops on every audio start/stop:** RG477M omits a digital SmartPA — the analog speaker amp is fed from PMIC `MT6368` headphone output and hard-toggled via `GPIO 5` on every 3-second `AudioFlinger` standby.
 
 ## What `rg477m_perf_tuning` Changes
 
@@ -28,7 +29,14 @@ When the quick panel fan mode is set to **`bal`** (`fan_mode=1`) or **`turbo`** 
 - **`turbo` curve:** `<42°C → 80` · `42–52°C → 115` · `52–60°C → 150` · `60–68°C → 185` · `68–76°C → 220` · `>=76°C → 255` (stops when screen is off and `<55°C`).
 - **`silent` / `fixed`:** Handed straight back to the stock quick panel (`chmod 666`).
 
-### 4. Safety & Measured Results
+### 4. Click-Free Analog Speaker Amp Control (Timer-Free)
+The daemon controls the stock kernel sysfs node `/sys/devices/platform/11050000.mt6897-afe-pcm/is_fm_enable` using 3.5 mm jack detection (`/sys/bus/platform/drivers/pmic-codec-accdet/state`) and AFE runtime power status (`/sys/devices/platform/11050000.mt6897-afe-pcm/power/runtime_status`) without touching `ro.audio.flinger_standbytime_ms`:
+- **Screen ON & 3.5 mm unplugged → `1.0`:** routes the analog switch to speakers and keeps the `GPIO 5` speaker amp enabled (zero clicks regardless of idle gaps, zero background hiss, while `AudioFlinger` and PMIC `MT6368` keep their stock 3-second standby).
+- **3.5 mm headset plugged → `0.1`:** immediately switches the analog route to the 3.5 mm jack and powers off the speaker amp.
+- **Screen OFF & 3.5 mm unplugged → `0.1` once AFE enters `suspended`:** speaker amp powers off in sleep (zero idle drain) without cutting active background music playback, while wake alarms and notifications fall back cleanly to the stock driver.
+- **Daemon exit (`trap INT/TERM/EXIT`) → `0.1`:** restores stock driver control cleanly.
+
+### 5. Safety & Measured Results
 - **Thermal protection:** `thermal_core` is **never disabled**. Above `85 °C` (`<80 °C` hysteresis), the daemon backs off GPU ceiling to `900 MHz` and clears `uclamp` / GPU boosts.
 - **Bootloop protection:** `post-fs-data.sh` counts incomplete boots and automatically disables the module after 2 failed boots.
 - **Measured on RG477M V1.32 (heavy 3D Vulkan test in `bal` mode):** average FPS rose from **`56.1`** to **`60.03`**, GPU frame time dropped from **`12.46 ms`** to **`7.88 ms`** (-37%), average SoC temperature stayed at **`53.8 °C`** (battery `28.1 °C`), and system `BLASTBufferQueue` errors dropped to **0**.

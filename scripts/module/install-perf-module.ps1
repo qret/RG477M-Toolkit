@@ -25,11 +25,27 @@ if (Test-Path -LiteralPath $versionPropsPath) {
         if ($line -match '^\s*APP_VERSION\s*=\s*(.+)$') { $appVersion = $Matches[1].Trim() }
     }
 }
-$zipPath = Join-Path $script:ProjectRoot ("build\rg477m-perf-module-v{0}.zip" -f $appVersion)
+$zipName = "rg477m-perf-module-v{0}.zip" -f $appVersion
+$bundledZip = Join-Path $script:ProjectRoot ("magisk\{0}" -f $zipName)
+$buildZip = Join-Path $script:ProjectRoot ("build\{0}" -f $zipName)
+$moduleSrcDir = Join-Path $script:ProjectRoot 'magisk\module'
+
+$zipPath = if (Test-Path -LiteralPath $bundledZip) { $bundledZip } else { $buildZip }
 
 if (-not $Uninstall) {
-    & (Join-Path $PSScriptRoot 'build-perf-module.ps1') -OutZip $zipPath
-    if ($LASTEXITCODE -ne 0) { throw 'Failed to build Magisk module zip.' }
+    $needBuild = -not (Test-Path -LiteralPath $zipPath)
+    if (-not $needBuild -and (Test-Path -LiteralPath $moduleSrcDir)) {
+        $zipTime = (Get-Item -LiteralPath $zipPath).LastWriteTimeUtc
+        $newerSrc = Get-ChildItem -LiteralPath $moduleSrcDir -Recurse -File | Where-Object { $_.LastWriteTimeUtc -gt $zipTime } | Select-Object -First 1
+        if ($newerSrc) { $needBuild = $true }
+    }
+    if ($needBuild) {
+        $zipPath = $buildZip
+        & (Join-Path $PSScriptRoot 'build-perf-module.ps1') -OutZip $zipPath
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to build Magisk module zip.' }
+    } else {
+        Write-Host "[ OK ] Используется готовый ZIP модуля: $zipPath" -ForegroundColor Green
+    }
 }
 
 if (-not $Execute -or $DryRun) {

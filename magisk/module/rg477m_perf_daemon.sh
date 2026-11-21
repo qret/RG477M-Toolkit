@@ -3,6 +3,7 @@
 # - Keeps thermal_core active, enforces LVTS-safe thermal backoff at >=85C.
 # - Fixes CPU mid-cluster dips via real schedutil/rate_limit_us + uclamp.
 # - Replaces jumpy stock Auto fan curve (fan_mode=1) with EMA-smoothed ramp (0..255).
+# - Eliminates analog speaker pop/click (GPIO 5) via is_fm_enable without AudioFlinger timers.
 
 GPU_DEV="/sys/devices/platform/soc/13000000.mali/devfreq/13000000.mali"
 GED_HAL="/sys/kernel/ged/hal"
@@ -12,6 +13,9 @@ UCLAMP_LAT="/dev/cpuctl/top-app/cpu.uclamp.latency_sensitive"
 CPUIDLE_GOV="/sys/devices/system/cpu/cpuidle/current_governor"
 BL_FILE="/sys/class/leds/lcd-backlight/brightness"
 FAN_NODE="/sys/devices/platform/pwm_fan/pwm_fan_set"
+AMP_NODE="/sys/devices/platform/11050000.mt6897-afe-pcm/is_fm_enable"
+AFE_PM_NODE="/sys/devices/platform/11050000.mt6897-afe-pcm/power/runtime_status"
+JACK_NODE="/sys/bus/platform/drivers/pmic-codec-accdet/state"
 
 w() {
     [ -e "$1" ] && echo "$2" > "$1" 2>/dev/null || true
@@ -165,109 +169,171 @@ calc_target_fan_pwm() {
 }
 
 last_state=""
+last_amp_state=""
 in_thermal=0
 ema_temp=0
 cur_pwm=0
 fan_owned=0
 tick=0
+heavy_tick=0
 cached_fan_mode="1"
+
+cleanup() {
+    [ -e "$AMP_NODE" ] && echo "0.1" > "$AMP_NODE" 2>/dev/null || true
+    if [ "${fan_owned:-0}" -eq 1 ] && [ -e "$FAN_NODE" ]; then
+        chmod 666 "$FAN_NODE" 2>/dev/null || true
+    fi
+    exit 0
+}
+trap cleanup INT TERM EXIT
 
 while true; do
     bright=1
     if [ -r "$BL_FILE" ]; then
-        bval=$(cat "$BL_FILE" 2>/dev/null)
+        read -r bval < "$BL_FILE" 2>/dev/null || bval=""
         case "$bval" in
             ''|*[!0-9]*) bright=1 ;;
             *) bright=$bval ;;
         esac
     fi
 
-    temp=$(get_max_soc_temp)
-    if [ "$temp" -gt 0 ]; then
-        if [ "$ema_temp" -eq 0 ]; then
-            ema_temp=$temp
+    # Click-free analog speaker amp control (no AudioFlinger standby timers):
+    # - Screen ON & 3.5mm jack unplugged -> 1.0 (hold GPIO 5 amp ON; stock 3s DSP/DAC standby stays active)
+    # - 3.5mm jack plugged -> 0.1 (route to headset & power off speaker amp immediately)
+    # - Screen OFF & unplugged -> 0.1 unless background speaker playback is currently active (AFE runtime_status=active)
+    if [ -e "$AMP_NODE" ]; then
+        jack_state=0
+        if [ -r "$JACK_NODE" ]; then
+            read -r jval < "$JACK_NODE" 2>/dev/null || jval=""
+            case "$jval" in
+                ''|*[!0-9]*) jack_state=0 ;;
+                *) jack_state=$jval ;;
+            esac
+        fi
+
+        if [ "$jack_state" -ne 0 ]; then
+            want_amp="0.1"
+        elif [ "$bright" -gt 0 ]; then
+            want_amp="1.0"
         else
-            # EMA smoothing (~10s time constant at 2s loop) to stop fan hunting
-            ema_temp=$(( (ema_temp * 3 + temp) / 4 ))
+            afe_pm=""
+            if [ -r "$AFE_PM_NODE" ]; then
+                read -r afe_pm < "$AFE_PM_NODE" 2>/dev/null || afe_pm=""
+            fi
+            if [ "$last_amp_state" = "1.0" ] && [ "$afe_pm" = "active" ]; then
+                want_amp="1.0"
+            else
+                want_amp="0.1"
+            fi
+        fi
+
+        if [ "$want_amp" != "$last_amp_state" ]; then
+            echo "$want_amp" > "$AMP_NODE" 2>/dev/null || true
+            last_amp_state="$want_amp"
         fi
     fi
 
-    if [ "$temp" -ge 85000 ]; then
-        in_thermal=1
-    elif [ "$in_thermal" -eq 1 ] && [ "$temp" -lt 80000 ]; then
-        in_thermal=0
-    fi
-
+    run_heavy=0
     if [ "$bright" -le 0 ]; then
-        target="screen_off"
-    elif [ "$in_thermal" -eq 1 ]; then
-        target="thermal_guard"
+        loop_sleep=2
+        run_heavy=1
     else
-        mode=$(getprop persist.sys.cpu.mode)
-        case "$mode" in
-            0|1|2|3) target="mode_${mode}" ;;
-            *) target="mode_1" ;;
-        esac
-    fi
-
-    if [ "$target" != "$last_state" ]; then
-        apply_profile "$target"
-        last_state="$target"
-    elif [ "$target" = "mode_1" ] || [ "$target" = "mode_2" ]; then
-        need_reapply=0
-        if [ -r "${GPU_DEV}/max_freq" ]; then
-            cur_max=$(cat "${GPU_DEV}/max_freq" 2>/dev/null)
-            [ "$cur_max" != "1400000000" ] && need_reapply=1
+        loop_sleep=1
+        if [ $((tick % 2)) -eq 0 ] || [ "$last_state" = "screen_off" ] || [ -z "$last_state" ]; then
+            run_heavy=1
         fi
-        if [ -r "/sys/devices/system/cpu/cpufreq/policy7/scaling_governor" ]; then
-            cur_gov=$(cat "/sys/devices/system/cpu/cpufreq/policy7/scaling_governor" 2>/dev/null)
-            [ "$cur_gov" != "schedutil" ] && need_reapply=1
+    fi
+
+    if [ "$run_heavy" -eq 1 ]; then
+        temp=$(get_max_soc_temp)
+        if [ "$temp" -gt 0 ]; then
+            if [ "$ema_temp" -eq 0 ]; then
+                ema_temp=$temp
+            else
+                # EMA smoothing (~10s time constant at 2s loop) to stop fan hunting
+                ema_temp=$(( (ema_temp * 3 + temp) / 4 ))
+            fi
         fi
-        [ "$need_reapply" -eq 1 ] && apply_profile "$target"
-    fi
 
-    # Smooth Auto Fan Controller (takes over only when stock fan_mode == 1 Auto)
-    # Check settings every 3 ticks (~6s) to keep CPU overhead near zero
-    if [ $((tick % 3)) -eq 0 ]; then
-        fm=$(settings get system fan_mode 2>/dev/null)
-        case "$fm" in
-            0|1|2|3|4) cached_fan_mode="$fm" ;;
-        esac
-    fi
+        if [ "$temp" -ge 85000 ]; then
+            in_thermal=1
+        elif [ "$in_thermal" -eq 1 ] && [ "$temp" -lt 80000 ]; then
+            in_thermal=0
+        fi
 
-    if [ -e "$FAN_NODE" ]; then
-        if [ "$cached_fan_mode" = "1" ] || [ "$cached_fan_mode" = "2" ]; then
-            if [ "$fan_owned" -eq 0 ]; then
-                # Lock out system uid (com.anbernic.control) while root daemon drives smooth bal/turbo EMA curve
-                chmod 644 "$FAN_NODE" 2>/dev/null || true
-                fan_owned=1
-            fi
-            tgt_pwm=$(calc_target_fan_pwm "$ema_temp" "$bright" "$cached_fan_mode")
-            diff=$((tgt_pwm - cur_pwm))
-            if [ "$tgt_pwm" -eq 0 ] && [ "$cur_pwm" -le 65 ]; then
-                cur_pwm=0
-                echo 0 > "$FAN_NODE" 2>/dev/null || true
-            elif [ "$diff" -ge 8 ]; then
-                step=$diff
-                [ "$step" -gt 10 ] && step=10
-                cur_pwm=$((cur_pwm + step))
-                echo "$cur_pwm" > "$FAN_NODE" 2>/dev/null || true
-            elif [ "$diff" -le -8 ]; then
-                step=$((-diff))
-                [ "$step" -gt 6 ] && step=6
-                cur_pwm=$((cur_pwm - step))
-                [ "$cur_pwm" -lt 0 ] && cur_pwm=0
-                echo "$cur_pwm" > "$FAN_NODE" 2>/dev/null || true
-            fi
+        if [ "$bright" -le 0 ]; then
+            target="screen_off"
+        elif [ "$in_thermal" -eq 1 ]; then
+            target="thermal_guard"
         else
-            if [ "$fan_owned" -eq 1 ]; then
-                # Return full control to Anbernic Control for manual/off/max/custom modes
-                chmod 666 "$FAN_NODE" 2>/dev/null || true
-                fan_owned=0
+            mode=$(getprop persist.sys.cpu.mode)
+            case "$mode" in
+                0|1|2|3) target="mode_${mode}" ;;
+                *) target="mode_1" ;;
+            esac
+        fi
+
+        if [ "$target" != "$last_state" ]; then
+            apply_profile "$target"
+            last_state="$target"
+        elif [ "$target" = "mode_1" ] || [ "$target" = "mode_2" ]; then
+            need_reapply=0
+            if [ -r "${GPU_DEV}/max_freq" ]; then
+                cur_max=$(cat "${GPU_DEV}/max_freq" 2>/dev/null)
+                [ "$cur_max" != "1400000000" ] && need_reapply=1
+            fi
+            if [ -r "/sys/devices/system/cpu/cpufreq/policy7/scaling_governor" ]; then
+                cur_gov=$(cat "/sys/devices/system/cpu/cpufreq/policy7/scaling_governor" 2>/dev/null)
+                [ "$cur_gov" != "schedutil" ] && need_reapply=1
+            fi
+            [ "$need_reapply" -eq 1 ] && apply_profile "$target"
+        fi
+
+        # Smooth Auto Fan Controller (takes over only when stock fan_mode == 1 Auto)
+        # Check settings every 3 heavy ticks (~6s) to keep CPU overhead near zero
+        if [ $((heavy_tick % 3)) -eq 0 ]; then
+            fm=$(settings get system fan_mode 2>/dev/null)
+            case "$fm" in
+                0|1|2|3|4) cached_fan_mode="$fm" ;;
+            esac
+        fi
+
+        if [ -e "$FAN_NODE" ]; then
+            if [ "$cached_fan_mode" = "1" ] || [ "$cached_fan_mode" = "2" ]; then
+                if [ "$fan_owned" -eq 0 ]; then
+                    # Lock out system uid (com.anbernic.control) while root daemon drives smooth bal/turbo EMA curve
+                    chmod 644 "$FAN_NODE" 2>/dev/null || true
+                    fan_owned=1
+                fi
+                tgt_pwm=$(calc_target_fan_pwm "$ema_temp" "$bright" "$cached_fan_mode")
+                diff=$((tgt_pwm - cur_pwm))
+                if [ "$tgt_pwm" -eq 0 ] && [ "$cur_pwm" -le 65 ]; then
+                    cur_pwm=0
+                    echo 0 > "$FAN_NODE" 2>/dev/null || true
+                elif [ "$diff" -ge 8 ]; then
+                    step=$diff
+                    [ "$step" -gt 10 ] && step=10
+                    cur_pwm=$((cur_pwm + step))
+                    echo "$cur_pwm" > "$FAN_NODE" 2>/dev/null || true
+                elif [ "$diff" -le -8 ]; then
+                    step=$((-diff))
+                    [ "$step" -gt 6 ] && step=6
+                    cur_pwm=$((cur_pwm - step))
+                    [ "$cur_pwm" -lt 0 ] && cur_pwm=0
+                    echo "$cur_pwm" > "$FAN_NODE" 2>/dev/null || true
+                fi
+            else
+                if [ "$fan_owned" -eq 1 ]; then
+                    # Return full control to Anbernic Control for manual/off/max/custom modes
+                    chmod 666 "$FAN_NODE" 2>/dev/null || true
+                    fan_owned=0
+                fi
             fi
         fi
+
+        heavy_tick=$((heavy_tick + 1))
     fi
 
     tick=$((tick + 1))
-    sleep 2
+    sleep "$loop_sleep"
 done
