@@ -131,11 +131,15 @@ calc_target_fan_pwm() {
     scr_on="$2"
     fmode="$3"
 
+    # Screen OFF: ALWAYS completely silent (0 PWM), prevent spinning in pockets/cases
+    if [ "$scr_on" -le 0 ]; then
+        echo 0
+        return
+    fi
+
     if [ "$fmode" = "2" ]; then
-        # Turbo smooth EMA curve: stronger airflow for heavy emulation, still silent when screen off & cool
-        if [ "$scr_on" -le 0 ] && [ "$ema_t" -lt 55000 ]; then
-            echo 0
-        elif [ "$ema_t" -ge 76000 ]; then
+        # Turbo smooth EMA curve: stronger airflow for heavy emulation
+        if [ "$ema_t" -ge 76000 ]; then
             echo 255
         elif [ "$ema_t" -ge 68000 ]; then
             echo 220
@@ -152,9 +156,7 @@ calc_target_fan_pwm() {
     fi
 
     # Balance smooth EMA curve (fan_mode == 1)
-    if [ "$scr_on" -le 0 ] && [ "$ema_t" -lt 60000 ]; then
-        echo 0
-    elif [ "$ema_t" -ge 85000 ]; then
+    if [ "$ema_t" -ge 85000 ]; then
         echo 255
     elif [ "$ema_t" -ge 80000 ]; then
         echo 200
@@ -239,8 +241,22 @@ while true; do
 
     run_heavy=0
     if [ "$bright" -le 0 ]; then
-        loop_sleep=2
-        run_heavy=1
+        # Screen OFF / sleep: kill fan immediately and restore node access for system
+        if [ -e "$FAN_NODE" ]; then
+            if [ "$cur_pwm" -ne 0 ]; then
+                cur_pwm=0
+                echo 0 > "$FAN_NODE" 2>/dev/null || true
+            fi
+            if [ "$fan_owned" -eq 1 ]; then
+                chmod 666 "$FAN_NODE" 2>/dev/null || true
+                fan_owned=0
+            fi
+        fi
+        loop_sleep=3
+        # Run heavy loop only ONCE on screen-off transition to apply idle profile & power down
+        if [ "$last_state" != "screen_off" ]; then
+            run_heavy=1
+        fi
     else
         loop_sleep=1
         if [ $((tick % 2)) -eq 0 ] || [ "$last_state" = "screen_off" ] || [ -z "$last_state" ]; then
@@ -293,16 +309,16 @@ while true; do
             [ "$need_reapply" -eq 1 ] && apply_profile "$target"
         fi
 
-        # Smooth Auto Fan Controller (takes over only when stock fan_mode == 1 Auto)
-        # Check settings every 3 heavy ticks (~6s) to keep CPU overhead near zero
-        if [ $((heavy_tick % 3)) -eq 0 ]; then
+        # Smooth Auto Fan Controller (takes over only when screen is ON and stock fan_mode == 1 or 2)
+        # Check settings every 3 heavy ticks (~6s) while screen is ON to keep CPU overhead near zero
+        if [ "$bright" -gt 0 ] && [ $((heavy_tick % 3)) -eq 0 ]; then
             fm=$(settings get system fan_mode 2>/dev/null)
             case "$fm" in
                 0|1|2|3|4) cached_fan_mode="$fm" ;;
             esac
         fi
 
-        if [ -e "$FAN_NODE" ]; then
+        if [ "$bright" -gt 0 ] && [ -e "$FAN_NODE" ]; then
             if [ "$cached_fan_mode" = "1" ] || [ "$cached_fan_mode" = "2" ]; then
                 if [ "$fan_owned" -eq 0 ]; then
                     # Lock out system uid (com.anbernic.control) while root daemon drives smooth bal/turbo EMA curve
