@@ -16,6 +16,48 @@ if (Test-Path -LiteralPath $versionPropsPath) {
 }
 
 $moduleDir = Join-Path $script:ProjectRoot 'magisk\module'
+$extModuleDir = Get-StockFixModuleDir
+if ($extModuleDir) {
+    $srcResolved = (Resolve-Path -LiteralPath $extModuleDir).Path.TrimEnd('\', '/')
+    $dstResolved = if (Test-Path -LiteralPath $moduleDir) { (Resolve-Path -LiteralPath $moduleDir).Path.TrimEnd('\', '/') } else { $moduleDir.TrimEnd('\', '/') }
+    if ($srcResolved -ne $dstResolved) {
+        New-Item -ItemType Directory -Force -Path $moduleDir | Out-Null
+        $srcFiles = @(Get-ChildItem -LiteralPath $srcResolved -Recurse -File)
+        $srcRelSet = New-Object System.Collections.Generic.HashSet[string]([System.StringComparer]::OrdinalIgnoreCase)
+        foreach ($sf in $srcFiles) {
+            $rel = $sf.FullName.Substring($srcResolved.Length).TrimStart('\', '/')
+            $null = $srcRelSet.Add($rel)
+            $dstFile = Join-Path $moduleDir $rel
+            $dstParent = Split-Path -Parent $dstFile
+            if (-not (Test-Path -LiteralPath $dstParent)) {
+                New-Item -ItemType Directory -Force -Path $dstParent | Out-Null
+            }
+            $needCopy = $true
+            if (Test-Path -LiteralPath $dstFile) {
+                $h1 = (Get-FileHash -LiteralPath $sf.FullName -Algorithm SHA256).Hash
+                $h2 = (Get-FileHash -LiteralPath $dstFile -Algorithm SHA256).Hash
+                if ($h1 -eq $h2) { $needCopy = $false }
+            }
+            if ($needCopy) {
+                Copy-Item -LiteralPath $sf.FullName -Destination $dstFile -Force
+            }
+        }
+        $dstFiles = @(Get-ChildItem -LiteralPath $moduleDir -Recurse -File)
+        foreach ($df in $dstFiles) {
+            $rel = $df.FullName.Substring($dstResolved.Length).TrimStart('\', '/')
+            if (-not $srcRelSet.Contains($rel)) {
+                Remove-Item -LiteralPath $df.FullName -Force
+            }
+        }
+        $dstDirs = @(Get-ChildItem -LiteralPath $moduleDir -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending)
+        foreach ($dd in $dstDirs) {
+            if ((Get-ChildItem -LiteralPath $dd.FullName -Force | Measure-Object).Count -eq 0) {
+                Remove-Item -LiteralPath $dd.FullName -Force
+            }
+        }
+        Write-Host "[ OK ] Синхронизирован актуальный модуль из RG477M-StockFix ($($srcFiles.Count) файлов)" -ForegroundColor Cyan
+    }
+}
 if (-not (Test-Path -LiteralPath $moduleDir)) {
     throw "Module source directory not found: $moduleDir"
 }

@@ -1,6 +1,7 @@
 id=rg477m_perf_tuning
-name=RG477M Performance & Frame Pacing Fix (MT6897)
-version=v0.1.1
-versionCode=101
-author=RG477M Toolkit
-description=Fixes Mali-G615 GPU cap, 1s BLASTBufferQueue flicker, erratic bal/turbo fan curves, and analog speaker pop/click on Anbernic RG477M (Stock V1.32) with LVTS thermal guard.
+name=RG477M StockFix (MT6897)
+version=v0.1.5
+versionCode=105
+author=qret (RG477M-StockFix)
+description=Stock V1.32 fixes & tuning for Anbernic RG477M (MT6897): Mali-G615 1400 MHz unlock, 1s BLASTBufferQueue flicker fix, smooth EMA fan curves with instant sleep shutoff, and click-free analog speaker amp control (GPIO 5).
+updateJson=https://raw.githubusercontent.com/qret/RG477M-StockFix/main/update.json

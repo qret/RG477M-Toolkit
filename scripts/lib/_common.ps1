@@ -71,6 +71,29 @@ function Get-SpftLogDir {
     return (Join-Path $script:ProjectRoot 'logs\sp_ft')
 }
 
+function Get-StockFixModuleDir {
+    $candidates = New-Object System.Collections.Generic.List[string]
+    $envDir = [Environment]::GetEnvironmentVariable('RG477M_STOCKFIX_DIR')
+    if ($envDir) {
+        $candidates.Add($envDir)
+        $candidates.Add((Join-Path $envDir 'module'))
+    }
+    if ($script:LocalCfg -and $script:LocalCfg.PSObject.Properties['stockfix_dir'] -and $script:LocalCfg.stockfix_dir) {
+        $cfgDir = [string]$script:LocalCfg.stockfix_dir
+        $candidates.Add((Join-Path $cfgDir 'module'))
+        $candidates.Add($cfgDir)
+    }
+    $siblingDir = Join-Path (Split-Path -Parent $script:ProjectRoot) 'RG477M-StockFix\module'
+    $candidates.Add($siblingDir)
+
+    foreach ($cand in $candidates) {
+        if ($cand -and (Test-Path -LiteralPath (Join-Path $cand 'module.prop'))) {
+            return (Resolve-Path -LiteralPath $cand).Path
+        }
+    }
+    return $null
+}
+
 function Invoke-SpftConfig {
     param(
         [string]$SpftExe,
@@ -100,8 +123,10 @@ function Invoke-Adb {
     $ep = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $out = (& $AdbExe @AdbArgs 2>&1 | Where-Object { $_ -notmatch '^\* daemon ' } | Out-String).Trim()
-        return $out
+        $lines = & $AdbExe @AdbArgs 2>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { "$_" }
+        } | Where-Object { $_ -notmatch '^\* daemon ' }
+        return (($lines -join "`n").Trim())
     } finally {
         $ErrorActionPreference = $ep
     }

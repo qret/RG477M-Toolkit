@@ -112,11 +112,17 @@
                                        Text="• Обычный режим (ADB): включите отладку по USB на консоли и подключите кабель."
                                        FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,0,0,6"/>
                             <TextBlock x:Name="GuidePreloaderText"
-                                       Text="• Авто-Preloader (рекомендуется): при запуске прошивки по ADB консоль сама перезагрузится и подхватится SP Flash Tool без зажатия кнопок."
-                                       FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,0,0,6"/>
-                            <TextBlock x:Name="GuideBromText"
-                                       Text="• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol- и Vol+ (НЕ нажимайте Power!) и вставьте USB-C."
-                                       FontSize="12" Foreground="#FBBF24" TextWrapping="Wrap"/>
+                                       Text="• Авто-Preloader (рекомендуется): при бэкапе, прошивке и откате по ADB консоль сама перезагрузится и подхватится SP Flash Tool без зажатия кнопок."
+                                       FontSize="12" Foreground="#A1A1AA" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <ui:Button x:Name="BtnRebootPreloader"
+                                       Content="Перезагрузить в Preloader / BROM (ADB)"
+                                       Appearance="Secondary"
+                                       HorizontalAlignment="Stretch"
+                                       Margin="0,2,0,0"
+                                       IsEnabled="False"
+                                       ToolTipService.InitialShowDelay="250"
+                                       ToolTipService.ShowDuration="15000"
+                                       Click="BtnRebootPreloader_Click"/>
                         </StackPanel>
                     </ui:Card>
                 </StackPanel>

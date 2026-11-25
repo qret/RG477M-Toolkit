@@ -87,9 +87,17 @@ if ($GenerateOnly) {
 }
 
 Write-Host ''
-Write-Host '=== READY FOR READBACK (READ-ONLY) ===' -ForegroundColor Yellow
-Write-Host '1. Disconnect USB-C and power off RG477M completely.'
-Write-Host '2. Wait 3 seconds, hold Vol+ and Vol- together (NO Power!), and plug USB-C cable.'
+Write-Host '=== STARTING SPFlashToolV6 (READBACK / AUTO-PRELOADER) ===' -ForegroundColor Yellow
+$adb = Get-AdbPath
+if ($adb) {
+    $st = Invoke-Adb -AdbExe $adb -AdbArgs @('get-state')
+    if ($st -eq 'device') {
+        Write-Host '[AUTO] ADB device detected -> sending "adb reboot" in 2s so Preloader VCOM catches automatically!' -ForegroundColor Cyan
+        Start-Job -ScriptBlock { param($a) Start-Sleep -Seconds 2; & $a reboot } -ArgumentList $adb | Out-Null
+    } else {
+        Write-Host '[INFO] Reboot or power off the connected RG477M (Preloader VCOM will be caught automatically).' -ForegroundColor Cyan
+    }
+}
 Write-Host 'Waiting for SPFlashToolV6...'
 Write-Host ''
 

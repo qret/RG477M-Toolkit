@@ -15,7 +15,9 @@ Write-Host "[ OK ] Guard passed: $($info.Model) $($info.BuildId) slot=$($info.Sl
 
 $suCheck = Invoke-Adb -AdbExe $adb -AdbArgs @('shell', 'su -c id')
 if ($suCheck -notmatch 'uid=0') {
-    throw "Root access (su -c id) is required. Got: '$suCheck'. Complete Magisk setup first."
+    Write-Host "[ERR] Root-доступ (su) недоступен: '$suCheck'." -ForegroundColor Red
+    Write-Host "[INFO] Убедитесь, что Шаг 2 (Magisk) завершён и консоль перезагрузилась. Если Magisk уже установлен — откройте приложение Magisk на консоли и разрешите доступ Superuser для Shell." -ForegroundColor Yellow
+    exit 1
 }
 
 $versionPropsPath = Join-Path $script:ProjectRoot 'version.properties'

@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationTitle>RG477M Root &amp; Performance Toolkit</ApplicationTitle>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
   </PropertyGroup>
 
   <ItemGroup>

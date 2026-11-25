@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
@@ -110,8 +111,9 @@ public partial class MainWindow : FluentWindow
             LabelBackupCaption.Text = "Stock Backup";
             GuideTitleText.Text = "Connection Guide (MT6897)";
             GuideAdbText.Text = "• Normal mode (ADB): enable USB debugging on the handheld and plug in USB-C.";
-            GuidePreloaderText.Text = "• Auto-Preloader (recommended): during flashing over ADB, the device auto-reboots and SP Flash Tool catches Preloader without button holds.";
-            GuideBromText.Text = "• Manual BROM (unbrick): power off completely, hold Vol- and Vol+ (do NOT press Power!) and plug in USB-C.";
+            GuidePreloaderText.Text = "• Auto-Preloader (recommended): during backup, flashing, or rollback over ADB, the handheld auto-reboots and SP Flash Tool catches Preloader without button holds.";
+            BtnRebootPreloader.Content = "Reboot to Preloader / BROM (ADB)";
+            BtnRebootPreloader.ToolTip = "Sends 'adb reboot' to the connected handheld so MediaTek Preloader VCOM appears (~2-3s window for SP Flash Tool). Steps 1, 2, and 4 also do this automatically.";
             WizardTitleText.Text = "Root & Performance Setup Wizard";
             ToolkitSubtitleText.Text = $"Anbernic RG477M • Stock V1.32 • Magisk {_paths.TargetMagiskVersion} • Toolkit v{_paths.ToolkitVersion}";
             Step1TitleText.Text = "1. Stock Firmware Backup";
@@ -125,7 +127,7 @@ public partial class MainWindow : FluentWindow
             Step4TitleText.Text = "1-Click Stock V1.32 Rollback";
             Step4DescText.Text = "Restores original factory partitions from your local backup and completely removes root (Magisk). Your games and data stay intact.";
             BtnRestoreStock.Content = "Restore Stock";
-            BtnRestoreStock.ToolTip = "Flashes your original factory init_boot and vbmeta from the saved PC backup and completely removes Magisk root. Your games and user files stay untouched.";
+            BtnRestoreStock.ToolTip = "Flashes your original factory init_boot and vbmeta from the saved PC backup and completely removes Magisk root. Your games and user files stay untouched. If the handheld does not boot into Android, power it off completely, hold Vol- + Vol+ (no Power) and plug USB-C.";
             LogExpander.Header = "Operation Console (click to expand)";
             BtnCopyLog.Content = "Copy Log";
             BtnCopyLog.ToolTip = "Copies the full operation log below to the Windows clipboard.";
@@ -143,8 +145,9 @@ public partial class MainWindow : FluentWindow
             LabelBackupCaption.Text = "Сток-бэкап";
             GuideTitleText.Text = "Памятка подключения (MT6897)";
             GuideAdbText.Text = "• Обычный режим (ADB): включите отладку по USB на консоли и подключите кабель.";
-            GuidePreloaderText.Text = "• Авто-Preloader (рекомендуется): при запуске прошивки по ADB консоль сама перезагрузится и подхватится SP Flash Tool без зажатия кнопок.";
-            GuideBromText.Text = "• Ручной BROM (если не загружается): полностью выключите консоль, зажмите Vol- и Vol+ (НЕ нажимайте Power!) и вставьте USB-C.";
+            GuidePreloaderText.Text = "• Авто-Preloader (рекомендуется): при бэкапе, прошивке и откате по ADB консоль сама перезагрузится и подхватится SP Flash Tool без зажатия кнопок.";
+            BtnRebootPreloader.Content = "Перезагрузить в Preloader / BROM (ADB)";
+            BtnRebootPreloader.ToolTip = "Отправляет 'adb reboot' на подключённую консоль, чтобы появился порт MediaTek Preloader VCOM (окно ~2–3 с для SP Flash Tool). Шаги 1, 2 и 4 делают это автоматически.";
             WizardTitleText.Text = "Мастер установки и оптимизации";
             ToolkitSubtitleText.Text = $"Anbernic RG477M • Stock V1.32 • Magisk {_paths.TargetMagiskVersion} • Toolkit v{_paths.ToolkitVersion}";
             Step1TitleText.Text = "1. Резервная копия заводской прошивки (бэкап)";
@@ -158,7 +161,7 @@ public partial class MainWindow : FluentWindow
             Step4TitleText.Text = "Откат на чистый сток V1.32";
             Step4DescText.Text = "Возвращает заводские системные разделы из вашей резервной копии и полностью удаляет root (Magisk). Игры и файлы сохранятся.";
             BtnRestoreStock.Content = "Откатить на сток";
-            BtnRestoreStock.ToolTip = "Прошьёт обратно оригинальные заводские разделы (init_boot и vbmeta) из сохранённого бэкапа и полностью уберёт root Magisk. Ваши игры и файлы сохранятся.";
+            BtnRestoreStock.ToolTip = "Прошьёт обратно оригинальные заводские разделы (init_boot и vbmeta) из сохранённого бэкапа и полностью уберёт root Magisk. Ваши игры и файлы сохранятся. Если консоль не загружается в Android — выключите её, зажмите Vol- и Vol+ (без Power) и подключите USB-C.";
             LogExpander.Header = "Консоль операций (нажмите, чтобы развернуть)";
             BtnCopyLog.Content = "Копировать лог";
             BtnCopyLog.ToolTip = "Скопировать весь текст из консоли операций в буфер обмена Windows.";
@@ -220,6 +223,7 @@ public partial class MainWindow : FluentWindow
 
     private void UpdateActionButtonsState(DeviceStateSnapshot state)
     {
+        BtnRebootPreloader.IsEnabled = !_isBusy && state.Mode == ConnectionMode.AdbOnline;
         if (state.HasStockBackup)
         {
             BtnReadbackRun.Appearance = ControlAppearance.Success;
@@ -343,6 +347,7 @@ public partial class MainWindow : FluentWindow
 
     private void SetActionButtonsEnabled(bool enabled)
     {
+        BtnRebootPreloader.IsEnabled = enabled && _latestState.Mode == ConnectionMode.AdbOnline;
         BtnReadbackRun.IsEnabled = enabled;
         BtnFlashMagisk.IsEnabled = enabled;
         BtnInstallPerfModule.IsEnabled = enabled;
@@ -449,6 +454,18 @@ public partial class MainWindow : FluentWindow
 
     private async void BtnInstallPerfModule_Click(object sender, RoutedEventArgs e)
     {
+        if (!_latestState.IsMagiskInstalled)
+        {
+            System.Windows.MessageBox.Show(
+                _isEnglish
+                    ? "Root access (Magisk) is not active on the connected RG477M yet.\n\n1. Complete Step 2 (Install Magisk) if you haven't already.\n2. If Step 2 just finished, reboot the console once and wait for Android to load.\n3. Make sure the Step 2 button turns green (\"✓ Magisk Installed\"), then try again."
+                    : "Root-доступ (Magisk) на подключённой консоли пока не активен.\n\n1. Если вы ещё не выполняли Шаг 2 — сначала установите Magisk.\n2. Если Шаг 2 только что завершился — перезагрузите консоль и дождитесь загрузки Android.\n3. Убедитесь, что кнопка Шага 2 стала зелёной («✓ Magisk установлен»), и повторите попытку.",
+                _isEnglish ? "Magisk Root Required" : "Требуется root-доступ Magisk",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         string prompt = _latestState.ModuleState switch
         {
             PerfModuleState.InstalledUpToDate => _isEnglish
@@ -510,6 +527,64 @@ public partial class MainWindow : FluentWindow
 
         if (confirm != System.Windows.MessageBoxResult.Yes) return;
         await ExecuteScriptAsync(_paths.RestoreScript, "-Execute");
+    }
+
+    private async void BtnRebootPreloader_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isBusy || _latestState.Mode != ConnectionMode.AdbOnline) return;
+
+        _isBusy = true;
+        SetActionButtonsEnabled(false);
+        LogExpander.IsExpanded = true;
+        try
+        {
+            AppendLog("[AUTO] " + (_isEnglish
+                ? "Sending 'adb reboot' so MediaTek Preloader VCOM appears..."
+                : "Отправляю 'adb reboot' для перехода в MediaTek Preloader VCOM..."));
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = _paths.AdbExe,
+                Arguments = "reboot",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            using var proc = Process.Start(psi);
+            if (proc is null)
+            {
+                AppendLog("[ERR] " + (_isEnglish ? "Failed to start adb.exe." : "Не удалось запустить adb.exe."));
+                return;
+            }
+
+            string outText = await proc.StandardOutput.ReadToEndAsync();
+            string errText = await proc.StandardError.ReadToEndAsync();
+            await proc.WaitForExitAsync();
+
+            if (proc.ExitCode == 0)
+            {
+                AppendLog("[ OK ] " + (_isEnglish
+                    ? "Reboot command sent. Preloader VCOM appears for ~2-3s (if SP Flash Tool is not waiting, Android boots normally)."
+                    : "Команда перезагрузки отправлена. Порт Preloader VCOM появится на ~2–3 с (если SP Flash Tool не запущен, далее загрузится Android)."));
+            }
+            else
+            {
+                string msg = string.IsNullOrWhiteSpace(errText) ? outText : errText;
+                AppendLog($"[ERR] adb reboot ({proc.ExitCode}): {msg.Trim()}");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog("[ERR] " + ex.Message);
+        }
+        finally
+        {
+            _isBusy = false;
+            SetActionButtonsEnabled(true);
+            await RefreshDeviceStateAsync();
+        }
     }
 
     private void BtnCopyLog_Click(object sender, RoutedEventArgs e)

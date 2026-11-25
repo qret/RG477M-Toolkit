@@ -106,4 +106,69 @@ if ($rc -ne 0) {
     Write-Host "[FAIL] SPFlashToolV6 exited with code $rc" -ForegroundColor Red
     exit $rc
 }
-Write-Host '[ OK ] Magisk images flashed! Power on the console and verify Magisk app / su.' -ForegroundColor Green
+Write-Host '[ OK ] Образы Magisk прошиты (SPFlashToolV6).' -ForegroundColor Green
+
+if (-not $adb) {
+    Write-Host '[WARN] adb.exe не найден — включите консоль вручную и проверьте статус Magisk.' -ForegroundColor Yellow
+    exit 0
+}
+
+function Wait-AndroidBoot {
+    param([string]$AdbExe, [int]$TimeoutSeconds = 90)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $st = Invoke-Adb -AdbExe $AdbExe -AdbArgs @('get-state')
+        if ($LASTEXITCODE -eq 0 -and $st -eq 'device') {
+            $booted = Invoke-Adb -AdbExe $AdbExe -AdbArgs @('shell', 'getprop', 'sys.boot_completed')
+            if ($LASTEXITCODE -eq 0 -and $booted.Trim() -eq '1') {
+                return $true
+            }
+        }
+        Start-Sleep -Seconds 3
+    }
+    return $false
+}
+
+function Wait-RootAccess {
+    param([string]$AdbExe, [int]$Attempts = 5)
+    $lastOut = ''
+    for ($i = 1; $i -le $Attempts; $i++) {
+        $lastOut = Invoke-Adb -AdbExe $AdbExe -AdbArgs @('shell', 'su -c id')
+        if ($LASTEXITCODE -eq 0 -and $lastOut -match 'uid=0') {
+            return @{ Ok = $true; Output = $lastOut }
+        }
+        if ($i -lt $Attempts) { Start-Sleep -Seconds 3 }
+    }
+    return @{ Ok = $false; Output = $lastOut }
+}
+
+Write-Host '[INFO] Ожидание загрузки RG477M после прошивки (до 90 с)... Если экран остался чёрным или на зарядке — включите консоль кнопкой Power.' -ForegroundColor Cyan
+if (-not (Wait-AndroidBoot -AdbExe $adb -TimeoutSeconds 90)) {
+    Write-Host '[WARN] Образы Magisk прошиты, но консоль не появилась по ADB за 90 с. Включите её кнопкой Power, дождитесь загрузки Android и нажмите «Обновить».' -ForegroundColor Yellow
+    exit 0
+}
+
+$root = Wait-RootAccess -AdbExe $adb -Attempts 5
+if ($root.Ok) {
+    Write-Host '[ OK ] Magisk активен и root (uid=0) подтверждён! Можно переходить к Шагу 3.' -ForegroundColor Green
+    exit 0
+}
+
+Write-Host '[INFO] Первый старт после прошивки завершён, но su ещё не активен — выполняем контрольную перезагрузку (adb reboot)...' -ForegroundColor Cyan
+$null = Invoke-Adb -AdbExe $adb -AdbArgs @('reboot')
+Start-Sleep -Seconds 5
+
+if (-not (Wait-AndroidBoot -AdbExe $adb -TimeoutSeconds 90)) {
+    Write-Host '[WARN] Образы Magisk прошиты, но после перезагрузки консоль не появилась по ADB за 90 с. Включите её кнопкой Power, дождитесь загрузки Android и нажмите «Обновить».' -ForegroundColor Yellow
+    exit 0
+}
+
+$root = Wait-RootAccess -AdbExe $adb -Attempts 5
+if ($root.Ok) {
+    Write-Host '[ OK ] Magisk активен и root (uid=0) подтверждён после перезагрузки! Можно переходить к Шагу 3.' -ForegroundColor Green
+    exit 0
+}
+
+$suOut = $root.Output
+Write-Host "[WARN] Образы Magisk прошиты, но su пока не отвечает ('$suOut'). Перезагрузите консоль вручную или откройте приложение Magisk (разрешите Shell в «Суперпользователь») и нажмите «Обновить»." -ForegroundColor Yellow
+exit 0

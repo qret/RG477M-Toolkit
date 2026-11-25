@@ -71,6 +71,18 @@ if (-not $Execute) {
     exit 0
 }
 
+Write-Host '=== STARTING SPFlashToolV6 (ROLLBACK / AUTO-PRELOADER) ===' -ForegroundColor Yellow
+$adb = Get-AdbPath
+if ($adb) {
+    $st = Invoke-Adb -AdbExe $adb -AdbArgs @('get-state')
+    if ($st -eq 'device') {
+        Write-Host '[AUTO] ADB device detected -> sending "adb reboot" in 2s so Preloader VCOM catches automatically!' -ForegroundColor Cyan
+        Start-Job -ScriptBlock { param($a) Start-Sleep -Seconds 2; & $a reboot } -ArgumentList $adb | Out-Null
+    } else {
+        Write-Host '[INFO] Reboot or power off RG477M and plug USB-C (or hold Vol- + Vol+ if not booting).' -ForegroundColor Cyan
+    }
+}
+
 $rc = Invoke-SpftConfig -SpftExe $spftExe -ConfigPath $cfgPath
 if ($rc -ne 0) { exit $rc }
 Write-Host '[ OK ] Stock vbmeta + init_boot restored!' -ForegroundColor Green
